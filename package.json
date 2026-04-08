@@ -1,0 +1,14 @@
+{
+    "name": "tennis-app",
+    "version": "1.0.0",
+    "description": "Proyecto SIU - Fase P2 Prototipar",
+    "main": "server.js",
+    "type": "module",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "express": "^5.2.1",
+        "socket.io": "^4.8.3"
+    }
+}

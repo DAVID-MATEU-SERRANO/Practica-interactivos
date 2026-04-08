@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenis Inteligente - Móvil</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <h1>Controlador Móvil</h1>
+    <button onclick="cambiarModo('MODO PARTIDO')">MODO PARTIDO</button>
+    <button onclick="cambiarModo('MODO ENTRENAMIENTO')">MODO ENTRENAMIENTO</button>
+    <p id="estado">Estado: Desconectado</p>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/mobile.js"></script>
+</body>
+
+</html>
