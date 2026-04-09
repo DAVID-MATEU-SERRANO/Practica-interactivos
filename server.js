@@ -39,6 +39,12 @@ io.on('connection', (socket) => {
         io.emit('modo-actualizado', modo);
     });
 
+    // Evento para resetear el sistema a la pantalla inicial
+    socket.on('resetear-a-inicio', () => {
+        console.log('Reseteando sistema a inicio');
+        io.emit('reset-confirmado');
+    });
+
     // Evento para retransmitir datos de sensores del móvil al portátil
     socket.on('datos-sensor', (data) => {
         socket.broadcast.emit('render-portatil', data);

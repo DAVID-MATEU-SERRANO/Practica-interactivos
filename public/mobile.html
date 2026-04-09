@@ -10,6 +10,12 @@
 
 <body>
     <h1>Controlador Móvil</h1>
+    
+    <!-- Indicador de Asistente de Voz -->
+    <div id="voice-status" class="status-indicator">
+        🎤 Escuchando comandos: <span id="voice-label">Iniciando...</span>
+    </div>
+
     <button onclick="cambiarModo('MODO PARTIDO')">MODO PARTIDO</button>
     <button onclick="cambiarModo('MODO ENTRENAMIENTO')">MODO ENTRENAMIENTO</button>
     <p id="estado">Estado: Desconectado</p>

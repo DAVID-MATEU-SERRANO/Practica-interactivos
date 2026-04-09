@@ -13,7 +13,72 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     margin: 0;
-    padding: 20px;
+    padding: 0;
+    min-height: 100vh;
+}
+
+/* Pantalla de Inicio (Overlay) */
+#start-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a2a3a 0%, #2c3e50 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: opacity 0.5s ease-out;
+}
+
+.overlay-content {
+    text-align: center;
+    color: white;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.overlay-content h1 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+
+.overlay-content p {
+    font-size: 1.2rem;
+    opacity: 0.8;
+    margin-bottom: 2rem;
+}
+
+#btn-iniciar {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 18px 40px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+}
+
+#btn-iniciar:hover {
+    transform: scale(1.05);
+    background: #2980b9;
+    box-shadow: 0 8px 20px rgba(52, 152, 219, 0.6);
+}
+
+/* Dashboard Content */
+#dashboard-content {
+    padding: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -65,19 +130,6 @@ button:active {
     margin-top: 30px;
 }
 
-#debug-datos {
-    width: 100%;
-    max-width: 600px;
-    background: #282c34;
-    color: #abb2bf;
-    padding: 15px;
-    border-radius: 8px;
-    font-family: monospace;
-    font-size: 14px;
-    margin-top: 20px;
-    min-height: 50px;
-}
-
 #qr-section {
     background: var(--card-bg);
     padding: 20px;
@@ -93,4 +145,32 @@ button:active {
     background: white;
     padding: 10px;
     border-radius: 8px;
+}
+
+.status-indicator {
+    background: var(--card-bg);
+    padding: 10px 20px;
+    border-radius: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-size: 14px;
+    margin-bottom: 20px;
+    border: 1px solid #eee;
+}
+
+#voice-label {
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+#debug-datos {
+    width: 100%;
+    max-width: 600px;
+    background: #282c34;
+    color: #abb2bf;
+    padding: 15px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 14px;
+    margin-top: 20px;
+    min-height: 50px;
 }

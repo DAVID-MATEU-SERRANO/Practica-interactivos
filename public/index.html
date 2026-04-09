@@ -9,7 +9,17 @@
 </head>
 
 <body>
-    <h1>Panel Principal (Portátil)</h1>
+    <!-- Pantalla de Inicio (Overlay) para activar el audio -->
+    <div id="start-overlay">
+        <div class="overlay-content">
+            <h1>TENIS INTELIGENTE 🎾</h1>
+            <p>Sistema de Análisis y Control Ubicuo</p>
+            <button id="btn-iniciar">INICIAR SISTEMA</button>
+        </div>
+    </div>
+
+    <div id="dashboard-content" style="display: none;">
+        <h1>Panel Principal (Portátil)</h1>
     <div id="status-container">
         <p>Modo Actual: <span id="modo-texto">ESPERANDO SELECCIÓN...</span></p>
     </div>
@@ -25,6 +35,7 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/main.js"></script>
+    </div>
 </body>
 
 </html>
