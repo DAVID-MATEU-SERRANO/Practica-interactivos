@@ -18,6 +18,21 @@
 
     <button onclick="cambiarModo('MODO PARTIDO')">MODO PARTIDO</button>
     <button onclick="cambiarModo('MODO ENTRENAMIENTO')">MODO ENTRENAMIENTO</button>
+
+    <!-- Selección de Saque Inicial (Solo al empezar partido) -->
+    <div id="seccion-saque" style="display: none; margin-top: 20px; text-align: center;">
+        <h3>¿Quién saca primero?</h3>
+        <button class="btn-punto" id="btn-saque-yo">SACA YO</button>
+        <button class="btn-punto" id="btn-saque-rival">SACA RIVAL</button>
+    </div>
+
+    <!-- Controles de Modo Partido (Ocultos inicialmente) -->
+    <div id="controles-partido" style="display: none; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 20px;">
+        <h3>Anotar Punto</h3>
+        <button class="btn-punto" id="btn-punto-yo">PUNTO YO</button>
+        <button class="btn-punto" id="btn-punto-rival">PUNTO RIVAL</button>
+    </div>
+
     <p id="estado">Estado: Desconectado</p>
     <button id="pingButton">Enviar Ping (Prueba)</button>
 

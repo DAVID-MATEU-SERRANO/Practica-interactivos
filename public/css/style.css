@@ -1,176 +1,186 @@
 :root {
-    --primary-color: #2c3e50;
+    --primary-color: #1a2a3a;
     --accent-color: #3498db;
     --success-color: #27ae60;
     --error-color: #e74c3c;
-    --bg-color: #f4f7f6;
-    --card-bg: #ffffff;
-    --text-color: #333;
+    --bg-color: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --text-color: #f8fafc;
+    --gold: #fbbf24;
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Inter', -apple-system, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
     margin: 0;
     padding: 0;
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
-/* Pantalla de Inicio (Overlay) */
-#start-overlay {
+/* Glassmorphism Effect */
+.glass {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Overlay & Modales */
+#start-overlay, #modal-saque {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #1a2a3a 0%, #2c3e50 100%);
+    background: rgba(15, 23, 42, 0.9);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
-    transition: opacity 0.5s ease-out;
+    z-index: 2000;
 }
 
-.overlay-content {
+.overlay-content, .modal-content {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    padding: 60px;
+    border-radius: 24px;
     text-align: center;
-    color: white;
-    padding: 40px;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    max-width: 500px;
 }
 
-.overlay-content h1 {
-    font-size: 3rem;
-    margin-bottom: 0.5rem;
-    letter-spacing: 2px;
-}
-
-.overlay-content p {
-    font-size: 1.2rem;
-    opacity: 0.8;
-    margin-bottom: 2rem;
-}
-
-#btn-iniciar {
+#btn-iniciar, .opciones-saque button {
     background: var(--accent-color);
     color: white;
     border: none;
-    padding: 18px 40px;
-    font-size: 1.2rem;
-    font-weight: bold;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
-}
-
-#btn-iniciar:hover {
-    transform: scale(1.05);
-    background: #2980b9;
-    box-shadow: 0 8px 20px rgba(52, 152, 219, 0.6);
-}
-
-/* Dashboard Content */
-#dashboard-content {
-    padding: 30px;
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-h1 {
-    color: var(--primary-color);
-    margin-bottom: 20px;
-}
-
-#status-container, #estado {
-    background: var(--card-bg);
-    padding: 15px 25px;
+    padding: 20px 40px;
+    font-size: 1.25rem;
+    font-weight: 700;
     border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin: 10px;
+}
+
+#btn-iniciar:hover, .opciones-saque button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(52, 152, 219, 0.5);
+}
+
+/* Marcador Estilo Premium */
+#marcador-partido {
+    width: 95%;
+    max-width: 1000px;
+    margin-top: 50px;
+    padding: 40px;
+    border-radius: 32px;
+}
+
+.marcador-header {
+    text-align: center;
+    font-size: 0.9rem;
+    letter-spacing: 0.5rem;
+    color: var(--accent-color);
+    margin-bottom: 40px;
+    font-weight: 900;
+}
+
+.fila-marcador {
+    display: grid;
+    grid-template-columns: 2.5fr 1fr 1fr 1fr 1.5fr;
+    align-items: center;
+    padding: 25px;
+    margin-bottom: 15px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.fila-marcador.header {
+    background: transparent;
+    font-size: 0.75rem;
+    color: #64748b;
+    padding-bottom: 10px;
+}
+
+.col-nombre {
+    font-size: 1.75rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.pelota-saque {
+    font-size: 1.2rem;
+    filter: drop-shadow(0 0 5px var(--gold));
+}
+
+.col-set {
+    text-align: center;
+    font-size: 2rem;
+    color: #94a3b8;
+}
+
+.col-puntos {
+    text-align: center;
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+}
+
+/* Aviso de Pista */
+#aviso-pista {
+    background: var(--error-color);
+    color: white;
+    padding: 15px;
+    border-radius: 12px;
     font-weight: bold;
     text-align: center;
-}
-
-#modo-texto {
-    color: var(--accent-color);
-}
-
-button {
-    background-color: var(--accent-color);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    margin: 5px;
-    transition: transform 0.2s, background-color 0.2s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-button:hover {
-    background-color: #2980b9;
-    transform: translateY(-2px);
-}
-
-button:active {
-    transform: translateY(0);
-}
-
-#pingButton {
-    background-color: var(--primary-color);
     margin-top: 30px;
+    animation: pulse 1.5s infinite;
 }
 
-#qr-section {
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.02); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Móvil */
+.btn-punto {
+    width: 90%;
+    padding: 30px;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 15px 0;
+    border-radius: 20px;
+    border: none;
+    color: white;
+}
+
+#btn-punto-yo { background: var(--success-color); box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4); }
+#btn-punto-rival { background: var(--error-color); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); }
+
+/* QR y Debug */
+#qr-section, #status-container {
     background: var(--card-bg);
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    margin: 20px 0;
+    padding: 30px;
+    border-radius: 24px;
+    margin: 20px;
     text-align: center;
 }
 
 #qrcode {
-    display: flex;
-    justify-content: center;
     background: white;
-    padding: 10px;
-    border-radius: 8px;
-}
-
-.status-indicator {
-    background: var(--card-bg);
-    padding: 10px 20px;
-    border-radius: 30px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    font-size: 14px;
-    margin-bottom: 20px;
-    border: 1px solid #eee;
-}
-
-#voice-label {
-    font-weight: bold;
-    transition: color 0.3s ease;
-}
-
-#debug-datos {
-    width: 100%;
-    max-width: 600px;
-    background: #282c34;
-    color: #abb2bf;
     padding: 15px;
-    border-radius: 8px;
-    font-family: monospace;
-    font-size: 14px;
-    margin-top: 20px;
-    min-height: 50px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+/* Focus Mode Adjustments */
+body.match-active {
+    background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
 }

@@ -24,6 +24,35 @@
         <p>Modo Actual: <span id="modo-texto">ESPERANDO SELECCIÓN...</span></p>
     </div>
 
+    <!-- Marcador de Partido (Profesional) -->
+    <div id="marcador-partido" style="display: none;">
+        <div class="marcador-header">MARCADOR EN VIVO</div>
+        <div class="marcador-tabla">
+            <div class="fila-marcador header">
+                <div class="col-nombre">JUGADOR</div>
+                <div class="col-set">S1</div>
+                <div class="col-set">S2</div>
+                <div class="col-set">S3</div>
+                <div class="col-puntos">PTOS</div>
+            </div>
+            <div class="fila-marcador" id="fila-yo">
+                <div class="col-nombre">YO <span class="pelota-saque" id="saque-yo">🎾</span></div>
+                <div class="col-set" id="s1-yo">0</div>
+                <div class="col-set" id="s2-yo">0</div>
+                <div class="col-set" id="s3-yo">0</div>
+                <div class="col-puntos" id="puntos-yo">0</div>
+            </div>
+            <div class="fila-marcador" id="fila-rival">
+                <div class="col-nombre">RIVAL <span class="pelota-saque" id="saque-rival">🎾</span></div>
+                <div class="col-set" id="s1-rival">0</div>
+                <div class="col-set" id="s2-rival">0</div>
+                <div class="col-set" id="s3-rival">0</div>
+                <div class="col-puntos" id="puntos-rival">0</div>
+            </div>
+        </div>
+        <div id="aviso-pista" style="display: none;">🔄 CAMBIO DE PISTA</div>
+    </div>
+
     <!-- Contenedor para el código QR -->
     <div id="qr-section">
         <p>Escanea para conectar el móvil:</p>

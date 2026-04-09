@@ -50,6 +50,24 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('render-portatil', data);
     });
 
+    // Evento para anotar puntos en modo partido
+    socket.on('anotar-punto', (quien) => {
+        console.log('Punto anotado por: ' + quien);
+        io.emit('punto-registrado', quien);
+    });
+
+    // Evento para definir el saque inicial desde el móvil
+    socket.on('definir-saque', (quien) => {
+        console.log('Saque inicial definido por el móvil: ' + quien);
+        io.emit('saque-definido', quien);
+    });
+
+    // Evento para silenciar/activar audio
+    socket.on('alternar-audio', (estado) => {
+        console.log('Audio: ' + (estado ? 'SILENCIADO' : 'ACTIVADO'));
+        io.emit('audio-actualizado', estado);
+    });
+
     // Diagnóstico: evento 'ping' del ejemplo de referencia
     socket.on('ping', (msg) => {
         console.log('Ping recibido: ', JSON.stringify(msg));
