@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Captura de Fotogramas - UC3M</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #222;
+            color: white;
+        }
+
+        video,
+        canvas {
+            border: 2px solid #555;
+            margin: 10px;
+            width: 480px;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Captura de Cámara a Canvas</h2>
+
+    <div class="container">
+        <div>
+            <p>Stream Original</p>
+            <video id="webcam" autoplay playsinline muted></video>
+        </div>
+
+        <div>
+            <p>Captura (Canvas)</p>
+            <canvas id="outputCanvas"></canvas>
+        </div>
+    </div>
+
+    <script src="camera.js"></script>
+</body>
+
+</html>

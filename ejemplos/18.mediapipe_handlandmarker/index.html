@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>MediaPipe - Reconocimiento de Gestos UC3M</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #1a1a1a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+        }
+
+        video,
+        canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 640px;
+            height: 480px;
+            border-radius: 10px;
+        }
+
+        #info {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            width: 600px;
+        }
+
+        .gesture-active {
+            color: #00ff00;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Detección de Landmarks y Heurísticas</h2>
+
+    <div class="container">
+        <video id="webcam" autoplay playsinline></video>
+        <canvas id="output_canvas"></canvas>
+    </div>
+
+    <div id="info">
+        <div>Gesto detectado: <span id="gesture-name">Ninguno</span></div>
+        <div>Ángulo dedo índice: <span id="angle-val">0</span>°</div>
+        <div>Normal de la palma (X, Y, Z): <span id="normal-val">0</span></div>
+    </div>
+
+    <script type="module" src="index.js">
+
+    </script>
+</body>
+
+</html>

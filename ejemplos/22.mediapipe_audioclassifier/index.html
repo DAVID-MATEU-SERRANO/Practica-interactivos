@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>MediaPipe Audio Classifier</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+        }
+
+        #results-container {
+            margin-top: 20px;
+            padding: 20px;
+            border: 2px solid #ccc;
+            display: inline-block;
+        }
+
+        .active {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Clasificación de Audio</h1>
+    <button id="start-btn">ACTIVAR MICRÓFONO</button>
+
+    <div id="results-container">
+        <p>Sonido detectado: <span id="sound-name">---</span></p>
+        <p>Confianza: <span id="confidence-val">0</span>%</p>
+    </div>
+
+    <script type="module" src="index.js"></script>
+</body>
+
+</html>

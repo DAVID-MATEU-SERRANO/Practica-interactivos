@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>NLP Ubicuo: Análisis de Sentimiento</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+
+        #output {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #007bff;
+            padding: 10px;
+            background: #f0f0f0;
+        }
+
+        .loading {
+            color: orange;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Análisis de Sentimiento</h1>
+    <p>Escribe una frase (en inglés) para analizar su carga emocional:</p>
+
+    <textarea id="input">I love learning about interactive systems! It's amazing.</textarea>
+
+    <button id="btn">Analizar Sentimiento</button>
+
+    <p id="status" class="loading">Cargando modelo...</p>
+    <div id="output">Esperando análisis...</div>
+
+    <script type="module" src="index.js"></script>
+</body>
+
+</html>

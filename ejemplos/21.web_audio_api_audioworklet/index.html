@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Web Audio API - ScriptProcessor (Legacy)</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+
+        #meter {
+            width: 300px;
+            height: 30px;
+            background: #eee;
+            margin: 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        #bar {
+            width: 0%;
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.1s;
+        }
+
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Procesador de Audio con AudioWorklet</h1>
+    <p>Uso de <code>AudioWorkletProcessor</code> para medir amplitud.</p>
+
+    <button id="btn">Iniciar Micrófono</button>
+
+    <div id="meter">
+        <div id="bar"></div>
+    </div>
+    <p>Amplitud (RMS): <span id="val">0.00</span></p>
+
+    <script src="index.js"></script>
+</body>
+
+</html>

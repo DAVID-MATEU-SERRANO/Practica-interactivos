@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>Tenis Inteligente - Dashboard</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 
 <body>
@@ -12,7 +13,15 @@
     <div id="status-container">
         <p>Modo Actual: <span id="modo-texto">ESPERANDO SELECCIÓN...</span></p>
     </div>
+
+    <!-- Contenedor para el código QR -->
+    <div id="qr-section">
+        <p>Escanea para conectar el móvil:</p>
+        <div id="qrcode"></div>
+    </div>
+
     <div id="debug-datos"></div>
+    <button id="pingButton">Enviar Ping (Prueba)</button>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/main.js"></script>

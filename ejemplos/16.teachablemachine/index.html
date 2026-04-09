@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Teachable Machine - UC3M</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #1a1a1a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* Contenedor para la webcam de Teachable Machine */
+        #webcam-container {
+            margin-bottom: 20px;
+            border: 4px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #label-container {
+            background: rgba(40, 40, 40, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            width: 300px;
+            text-align: center;
+            border: 1px solid #444;
+        }
+
+        .prediction-item {
+            margin: 10px 0;
+            font-size: 1.2rem;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Clasificador Teachable Machine</h2>
+
+    <button type="button" onclick="init()">Empezar</button>
+
+    <div id="webcam-container"></div>
+    <div id="label-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <script type="text/javascript" src="script.js"></script>
+</body>
+
+</html>

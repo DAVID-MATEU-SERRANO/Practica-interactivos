@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>SIU: Chat Model Local</title>
+</head>
+
+<body>
+    <h1>Qwen2.5-Instruct (WebGPU Chat)</h1>
+
+    <div id="chat-box"
+        style="white-space: pre-wrap; margin-top: 20px; background: #eee; padding: 15px; height: 300px; overflow-y: auto;">
+        <p id="status">Estado: Cargando modelo en GPU...</p>
+    </div>
+
+    <input id="input" type="text" placeholder="Pregunta algo..." disabled>
+    <button id="btn" disabled>Enviar</button>
+    <button id="reset-btn" disabled>Reiniciar Chat</button>
+
+    <script type="module" src="index.js"></script>
+</body>
+
+</html>

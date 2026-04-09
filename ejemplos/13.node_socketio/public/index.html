@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chat Socket.io - Ejemplo SIU</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        #messages {
+            list-style-type: none;
+            padding: 0;
+            border: 1px solid #ddd;
+            height: 200px;
+            overflow-y: scroll;
+        }
+
+        #messages li {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        form {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        input {
+            flex-grow: 1;
+            padding: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <ul id="messages"></ul>
+    <form id="form" action="">
+        <input id="input" autocomplete="off" placeholder="Escribe un mensaje..." /><button>Enviar</button>
+    </form>
+
+    <button id="pingButton">Otro botón</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
+</body>
+
+</html>
