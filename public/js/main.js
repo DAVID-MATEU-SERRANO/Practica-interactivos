@@ -263,7 +263,7 @@ socket.on('modo-actualizado', (modo) => {
         if (pingButton) pingButton.style.display = 'none';
         
         if (partido.quienSaca === null) {
-            hablar("Modo partido activado. Por favor, selecciona quién realiza el primer saque en tu móvil.");
+            hablar("Modo partido activado. Diga 'yo' o 'rival' en su móvil para elegir el saque inicial.");
         }
     } else {
         document.body.classList.remove('match-active');

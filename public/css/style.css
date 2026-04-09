@@ -184,3 +184,32 @@ body {
 body.match-active {
     background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
 }
+
+/* Flash de Gestos */
+body.flash-abajo {
+    animation: flash-green 0.4s ease-out;
+}
+
+body.flash-arriba {
+    animation: flash-red 0.4s ease-out;
+}
+
+@keyframes flash-green {
+    0% { background-color: var(--bg-color); }
+    50% { background-color: rgba(39, 174, 96, 0.4); }
+    100% { background-color: var(--bg-color); }
+}
+
+@keyframes flash-red {
+    0% { background-color: var(--bg-color); }
+    50% { background-color: rgba(231, 76, 60, 0.4); }
+    100% { background-color: var(--bg-color); }
+}
+
+#guia-gestos {
+    transition: transform 0.2s;
+}
+
+#guia-gestos p {
+    margin: 5px 0;
+}
