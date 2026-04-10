@@ -12,6 +12,12 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server);
 
+// --- ALMACENAMIENTO DE ESTADÍSTICAS ---
+let matchStats = {
+    points: [],
+    games: []
+};
+
 // Obtener la IP local para el QR
 app.get('/ip', (req, res) => {
     const networks = os.networkInterfaces();
@@ -50,10 +56,43 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('render-portatil', data);
     });
 
-    // Evento para anotar puntos en modo partido
-    socket.on('anotar-punto', (quien) => {
-        console.log('Punto anotado por: ' + quien);
+    // Evento para anotar puntos en modo partido con métricas
+    socket.on('anotar-punto', (payload) => {
+        let quien, metrics;
+        if (typeof payload === 'string') {
+            quien = payload;
+            metrics = {};
+        } else {
+            quien = payload.quien;
+            metrics = payload.metrics;
+        }
+
+        console.log(`\n🎾 PUNTO PARA: ${quien.toUpperCase()}`);
+        if (metrics.strokes) {
+            console.log(`   - Golpes totales: ${metrics.strokes.length}`);
+            metrics.strokes.forEach((s, i) => {
+                console.log(`   - Golpe ${i+1}: ${s.power}G | ${s.trajectory} | Dir: ${s.yaw}°`);
+            });
+        }
+        console.log(`   - Duración: ${metrics.duracion_punto}\n`);
+        
+        // Guardar el punto en las estadísticas
+        matchStats.points.push({
+            winner: quien,
+            timestamp: Date.now(),
+            ...metrics
+        });
+
         io.emit('punto-registrado', quien);
+    });
+
+    // Evento para registrar el fin de un juego
+    socket.on('registrar-fin-juego', (gameData) => {
+        console.log('Juego finalizado:', gameData);
+        matchStats.games.push({
+            timestamp: Date.now(),
+            ...gameData
+        });
     });
 
     // Evento para definir el saque inicial desde el móvil
@@ -72,6 +111,10 @@ io.on('connection', (socket) => {
     socket.on('ping', (msg) => {
         console.log('Ping recibido: ', JSON.stringify(msg));
         socket.emit('pong', 'pong');
+    });
+
+    socket.on('debug-logs', (msg) => {
+        console.log(`🔍 [DEBUG MÓVIL] ${msg}`);
     });
 
     socket.on('disconnect', () => {

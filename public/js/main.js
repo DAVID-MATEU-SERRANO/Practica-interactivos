@@ -13,19 +13,29 @@ const pingButton = document.getElementById('pingButton');
 
 // Referencias al Marcador
 const uiPuntos = { yo: document.getElementById('puntos-yo'), rival: document.getElementById('puntos-rival') };
+const uiSaque = { yo: document.getElementById('saque-yo'), rival: document.getElementById('saque-rival') };
+
+// UI Métricas
+const uiMetrics = {
+    power: document.getElementById('metric-power'),
+    strokes: document.getElementById('metric-strokes'),
+    trajectory: document.getElementById('metric-traj'),
+    duration: document.getElementById('metric-dur'),
+    listaGolpes: document.getElementById('lista-golpes')
+};
+
 const uiSets = [
     { yo: document.getElementById('s1-yo'), rival: document.getElementById('s1-rival') },
     { yo: document.getElementById('s2-yo'), rival: document.getElementById('s2-rival') },
     { yo: document.getElementById('s3-yo'), rival: document.getElementById('s3-rival') }
 ];
-const uiSaque = { yo: document.getElementById('saque-yo'), rival: document.getElementById('saque-rival') };
 
 // --- ESTADO DEL PARTIDO ---
 let partido = {
-    sets: [0, 0], 
-    games: [0, 0], 
-    puntos: [0, 0], 
-    setScores: [[0, 0], [0, 0], [0, 0]], 
+    sets: [0, 0],
+    games: [0, 0],
+    puntos: [0, 0],
+    setScores: [[0, 0], [0, 0], [0, 0]],
     currentSetIndex: 0,
     isTieBreak: false,
     tieBreakPoints: [0, 0],
@@ -72,7 +82,7 @@ if (btnIniciar) {
             })
             .catch(err => console.error("Error obteniendo IP:", err));
 
-        hablar("Bienvenido al sistema de Tenis Inteligente. Por favor, indique qué modo desea iniciar o escanea el código QR con su móvil.");
+        hablar("Bienvenido");
     });
 }
 
@@ -97,10 +107,46 @@ function verificarServidorTieBreak() {
 
 // --- LÓGICA DE PUNTUACIÓN ---
 
-socket.on('punto-registrado', (quien) => {
+socket.on('punto-registrado', (payload) => {
     if (partido.isMatchFinished || partido.quienSaca === null) return;
+
+    let quien, metrics;
+    if (typeof payload === 'string') {
+        quien = payload;
+        metrics = null;
+    } else {
+        quien = payload.quien;
+        metrics = payload.metrics;
+    }
+
     const winnerIdx = (quien === 'yo') ? 0 : 1;
     const loserIdx = (quien === 'yo') ? 1 : 0;
+
+    // Actualizar UI de métricas
+    if (metrics && metrics.strokes && metrics.strokes.length > 0) {
+        const strokes = metrics.strokes;
+        const totalStrokes = strokes.length;
+
+        // Calcular potencia media
+        const avgPower = strokes.reduce((acc, s) => acc + parseFloat(s.power), 0) / totalStrokes;
+
+        // Última trayectoria (la del golpe ganador)
+        const lastTraj = strokes[totalStrokes - 1].trajectory;
+
+        uiMetrics.power.innerText = avgPower.toFixed(1) + "G";
+        uiMetrics.strokes.innerText = totalStrokes;
+        uiMetrics.trajectory.innerText = lastTraj;
+        uiMetrics.duration.innerText = metrics.duracion_punto;
+
+        // Mostrar detalles individuales
+        uiMetrics.listaGolpes.innerHTML = "";
+        strokes.forEach((s, idx) => {
+            const span = document.createElement('span');
+            span.className = 'stroke-pill';
+            span.innerHTML = `<strong>G${idx + 1}:</strong> ${s.power}G <small>(${s.trajectory})</small>`;
+            uiMetrics.listaGolpes.appendChild(span);
+        });
+    }
 
     if (partido.isTieBreak) {
         anotarPuntoTieBreak(winnerIdx, loserIdx);
@@ -108,7 +154,7 @@ socket.on('punto-registrado', (quien) => {
     } else {
         anotarPuntoEstandar(winnerIdx, loserIdx);
     }
-    
+
     actualizarMarcadorUI();
     verificarCambioPista();
 });
@@ -135,7 +181,7 @@ function anotarPuntoEstandar(w, l) {
 function anotarPuntoTieBreak(w, l) {
     partido.tieBreakPoints[w]++;
     cantarPuntuacion();
-    
+
     if (partido.tieBreakPoints[w] >= 7 && (partido.tieBreakPoints[w] - partido.tieBreakPoints[l] >= 2)) {
         partido.games[w]++;
         partido.setScores[partido.currentSetIndex] = [...partido.games];
@@ -146,13 +192,13 @@ function anotarPuntoTieBreak(w, l) {
 function cantarPuntuacion() {
     const s = partido.quienSaca;
     const r = 1 - s;
-    
+
     if (partido.isTieBreak) {
         hablar(`${partido.tieBreakPoints[s]} a ${partido.tieBreakPoints[r]}`);
     } else {
         const pS = labelsPuntos[partido.puntos[s]] === "0" ? "Nada" : labelsPuntos[partido.puntos[s]];
         const pR = labelsPuntos[partido.puntos[r]] === "0" ? "Nada" : labelsPuntos[partido.puntos[r]];
-        
+
         if (pS === pR && pS !== "AD") {
             hablar(pS === "Nada" ? "Nada iguales" : pS + " iguales");
         } else {
@@ -162,15 +208,24 @@ function cantarPuntuacion() {
 }
 
 function ganarJuego(w) {
+    // Calcular duración del juego si lo estuviéramos trackeando aquí centralizadamente
+    // Pero el móvil lo enviará si le avisamos.
+
     partido.games[w]++;
     partido.puntos = [0, 0];
     partido.setScores[partido.currentSetIndex] = [...partido.games];
-    
+
+    // Notificar al móvil que el juego ha terminado para que guarde estadísticas
+    socket.emit('registrar-fin-juego', {
+        ganador: w === 0 ? 'yo' : 'rival',
+        marcador: `${partido.games[0]}-${partido.games[1]}`
+    });
+
     if (!partido.isTieBreak) cambiarServidorJuego();
-    
+
     const s = partido.quienSaca;
     const r = 1 - s;
-    
+
     // Anuncio conciso: "Juego usted. 4 2." o "Juego rival. 2 4."
     let msg = `Juego ${w === 0 ? "usted" : "rival"}. `;
     if (partido.games[s] === partido.games[r]) {
@@ -178,7 +233,7 @@ function ganarJuego(w) {
     } else {
         msg += `${partido.games[s]} ${partido.games[r]}.`;
     }
-    
+
     hablar(msg);
     checkSetStatus(w);
 }
@@ -201,15 +256,15 @@ function checkSetStatus(w) {
 
 function ganarSet(w) {
     partido.sets[w]++;
-    
+
     // Anuncio conciso: "Set usted. 6 4."
     let msg = `Set ${w === 0 ? "usted" : "rival"}. ${partido.games[0]} ${partido.games[1]}. `;
     if (partido.sets[0] !== 0 || partido.sets[1] !== 0) {
         msg += `${partido.sets[0]} sets a ${partido.sets[1]}.`;
     }
-    
+
     hablar(msg);
-    
+
     if (partido.sets[w] === 2) {
         partido.isMatchFinished = true;
         setTimeout(() => {
@@ -254,16 +309,16 @@ function verificarCambioPista() {
 
 socket.on('modo-actualizado', (modo) => {
     if (modoTexto) modoTexto.innerText = modo;
-    
+
     if (modo === "MODO PARTIDO") {
         document.body.classList.add('match-active');
         marcadorPartido.style.display = 'block';
         qrSection.style.display = 'none';
         statusContainer.style.display = 'none';
         if (pingButton) pingButton.style.display = 'none';
-        
+
         if (partido.quienSaca === null) {
-            hablar("Modo partido activado. Diga 'yo' o 'rival' en su móvil para elegir el saque inicial.");
+            hablar("Modo partido activado.");
         }
     } else {
         document.body.classList.remove('match-active');

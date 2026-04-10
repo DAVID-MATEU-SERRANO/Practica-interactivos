@@ -190,8 +190,20 @@ body.flash-abajo {
     animation: flash-green 0.4s ease-out;
 }
 
-body.flash-arriba {
+body.flash-red {
     animation: flash-red 0.4s ease-out;
+}
+
+body.flash-control {
+    animation: flash-blue 0.4s ease-out;
+}
+
+body.flash-potente {
+    animation: flash-orange 0.4s ease-out;
+}
+
+body.flash-extremo {
+    animation: flash-purple 0.6s ease-out;
 }
 
 @keyframes flash-green {
@@ -206,10 +218,94 @@ body.flash-arriba {
     100% { background-color: var(--bg-color); }
 }
 
+@keyframes flash-blue {
+    0% { background-color: var(--bg-color); }
+    50% { background-color: rgba(52, 152, 219, 0.4); }
+    100% { background-color: var(--bg-color); }
+}
+
+@keyframes flash-orange {
+    0% { background-color: var(--bg-color); }
+    50% { background-color: rgba(251, 191, 36, 0.5); }
+    100% { background-color: var(--bg-color); }
+}
+
+@keyframes flash-purple {
+    0% { background-color: var(--bg-color); }
+    50% { background-color: rgba(168, 85, 247, 0.6); }
+    100% { background-color: var(--bg-color); }
+}
+
 #guia-gestos {
     transition: transform 0.2s;
 }
 
 #guia-gestos p {
     margin: 5px 0;
+}
+
+/* Panel de Métricas */
+.panel-metricas {
+    margin-top: 40px;
+    padding: 25px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel-metricas h3 {
+    margin-top: 0;
+    font-size: 0.8rem;
+    color: var(--accent-color);
+    letter-spacing: 0.2rem;
+    text-transform: uppercase;
+}
+
+.metricas-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.metrica {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.metrica .label {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.metrica .valor {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-color);
+}
+
+.stroke-pill {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.2s;
+}
+
+.stroke-pill:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.stroke-pill strong {
+    color: var(--accent-color);
+    margin-right: 4px;
+}
+
+.stroke-pill small {
+    color: #94a3b8;
+    margin-left: 4px;
 }

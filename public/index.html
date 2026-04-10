@@ -53,6 +53,37 @@
         <div id="aviso-pista" style="display: none;">🔄 CAMBIO DE PISTA</div>
     </div>
 
+    <!-- Panel de Métricas del Último Punto -->
+    <div id="panel-metricas" class="panel-metricas" style="margin: 20px;">
+        <h3>ANÁLISIS DE ÚLTIMO PUNTO</h3>
+        <div class="metricas-grid">
+            <div class="metrica">
+                <span class="label">Potencia Media</span>
+                <span id="metric-power" class="valor">--</span>
+            </div>
+            <div class="metrica">
+                <span class="label">Total Golpes</span>
+                <span id="metric-strokes" class="valor">--</span>
+            </div>
+            <div class="metrica">
+                <span class="label">Trayectoria Final</span>
+                <span id="metric-traj" class="valor">--</span>
+            </div>
+            <div class="metrica">
+                <span class="label">Duración</span>
+                <span id="metric-dur" class="valor">--</span>
+            </div>
+        </div>
+
+        <!-- Detalle individual de cada golpe -->
+        <div id="detalle-golpes" style="margin-top: 20px; text-align: left; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+            <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 10px;">DETALLE INDIVIDUAL:</p>
+            <div id="lista-golpes" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <!-- Aquí se inyectarán los golpes -->
+            </div>
+        </div>
+    </div>
+
     <!-- Contenedor para el código QR -->
     <div id="qr-section">
         <p>Escanea para conectar el móvil:</p>
