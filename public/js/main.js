@@ -1,31 +1,45 @@
-// Eliminado Transformers.js local para usar DeepSeek en el servidor
-
 const socket = io();
-const modoTexto = document.getElementById('modo-texto');
 
-// Referencias a la UI Base
+// --- REFERENCIAS A LA UI BASE ---
+const modoTexto = document.getElementById('modo-texto');
 const startOverlay = document.getElementById('start-overlay');
 const btnIniciar = document.getElementById('btn-iniciar');
 const dashboardContent = document.getElementById('dashboard-content');
+
+// Vistas Principales
+const lobbyView = document.getElementById('lobby-view');
+const marcadorView = document.getElementById('marcador-view');
+const entrenamientoView = document.getElementById('entrenamiento-view');
+
+// Tarjetas de Selección de Modo
+const cardPartido = document.getElementById('card-partido');
+const cardEntrenamiento = document.getElementById('card-entrenamiento');
+
+// Referencias al Marcador y Otros
 const marcadorPartido = document.getElementById('marcador-partido');
 const avisoPista = document.getElementById('aviso-pista');
 const qrSection = document.getElementById('qr-section');
 const statusContainer = document.getElementById('status-container');
-const pingButton = document.getElementById('pingButton');
+
+// Vista Entrenamiento Detalle
+const canvasEntrenamiento = document.getElementById('canvas-entrenamiento');
+const ctxEntrenamiento = canvasEntrenamiento ? canvasEntrenamiento.getContext('2d') : null;
+const txtAngulo = document.getElementById('txt-angulo');
+const feedbackBadge = document.getElementById('feedback-badge');
+const tipExtension = document.getElementById('tip-extension');
+const tipContacto = document.getElementById('tip-contacto');
+
+// Handlers para las tarjetas del Lobby
+if (cardPartido) {
+    cardPartido.onclick = () => socket.emit('cambiar-modo', 'MODO PARTIDO');
+}
+if (cardEntrenamiento) {
+    cardEntrenamiento.onclick = () => socket.emit('cambiar-modo', 'MODO ENTRENAMIENTO');
+}
 
 // Referencias al Marcador
 const uiPuntos = { yo: document.getElementById('puntos-yo'), rival: document.getElementById('puntos-rival') };
 const uiSaque = { yo: document.getElementById('saque-yo'), rival: document.getElementById('saque-rival') };
-
-// UI Métricas
-const uiMetrics = {
-    power: document.getElementById('metric-power'),
-    strokes: document.getElementById('metric-strokes'),
-    trajectory: document.getElementById('metric-traj'),
-    duration: document.getElementById('metric-dur'),
-    reason: document.getElementById('metric-reason'),
-    listaGolpes: document.getElementById('lista-golpes')
-};
 
 const uiSets = [
     { yo: document.getElementById('s1-yo'), rival: document.getElementById('s1-rival') },
@@ -48,6 +62,7 @@ let partido = {
     estaSilenciado: false,
     matchHistory: [], // Registro de todos los puntos
     ultimoIndiceDescanso: 0, // Para calcular deltas
+    ultimoIndiceJuegosDescanso: 0, // Para deltas de juegos
     inicioUltimoJuego: Date.now(), // Tracking de duración de juego
     gameHistory: [] // Registro de duraciones de juegos
 };
@@ -58,6 +73,61 @@ const btnCloseStats = document.getElementById('close-stats');
 if (btnCloseStats) btnCloseStats.onclick = () => statsOverlay.classList.remove('visible');
 
 const labelsPuntos = ["0", "15", "30", "40", "AD"];
+let golpeSeleccionado = 'DERECHA'; // Por defecto
+let trainingActive = false;
+let subModoTraining = null; // null, 'FONDO' o 'SAQUE'
+let alturaMinimaMuñeca = 1.0; // Para el peak detector de saque
+
+// --- VARIABLES DEL DESAFÍO DE 5 GOLPES ---
+let contadorIntentos = 0;
+let contadorExitos = 0;
+let ultimaDeteccionDrill = 0;
+let drillFinalizado = false;
+
+// --- VARIABLES DE PRECISIÓN ---
+let estadoPreparacion = false; // Para detectar ciclo Codo Doblado -> Estirado
+let maxAnguloEnSalto = 0;      // Para capturar el mejor ángulo durante todo el saque/golpe
+let maxSeparacionEnSalto = 0;  // Para capturar la mejor separación hombro-codo
+let serveInProgress = false;    // Para saber cuándo se está realizando un saque alto
+
+// --- VARIABLES TEACHABLE MACHINE (MODO LÍNEA) ---
+let tmModel = null;
+let isTMModelLoading = false;
+let isProcessingTM = false; // Semáforo para evitar sobrecarga de predicciones
+const TM_MODEL_URL = "https://teachablemachine.withgoogle.com/models/RexvBpOpyS/"; // URL remota del usuario
+let lastFeedbackTime = 0; // Para cooldown de voz
+
+async function cargarModeloLinea() {
+    if (tmModel || isTMModelLoading) return;
+    if (!window.tmImage) {
+        console.error("⚠️ Librería Teachable Machine no cargada aún.");
+        return;
+    }
+    try {
+        isTMModelLoading = true;
+        console.log("🤖 Cargando modelo de Teachable Machine...");
+        const modelURL = TM_MODEL_URL + "model.json";
+        const metadataURL = TM_MODEL_URL + "metadata.json";
+        tmModel = await window.tmImage.load(modelURL, metadataURL);
+        console.log("✅ Modelo TM cargado correctamente");
+    } catch (e) {
+        console.error("❌ Error al cargar modelo TM:", e);
+    } finally {
+        isTMModelLoading = false;
+    }
+}
+
+function reiniciarDrill() {
+    contadorIntentos = 0;
+    contadorExitos = 0;
+    drillFinalizado = false;
+    ultimaDeteccionDrill = 0;
+    alturaMinimaMuñeca = 1.0;
+    estadoPreparacion = false;
+    maxAnguloEnSalto = 0;
+    maxSeparacionEnSalto = 0;
+    serveInProgress = false;
+}
 
 // --- SINCRONIZACIÓN DE AUDIO ---
 socket.on('audio-actualizado', (silenciar) => {
@@ -76,25 +146,34 @@ socket.on('audio-actualizado', (silenciar) => {
     }
 });
 
-// --- INICIO DEL SISTEMA ---
+/**
+ * Inicializa el sistema, limpia el overlay y genera el código QR
+ */
 if (btnIniciar) {
     btnIniciar.addEventListener('click', () => {
         startOverlay.style.display = 'none';
         dashboardContent.style.display = 'block';
 
+        // El sistema inicia siempre en el Lobby por defecto
+        lobbyView.style.display = 'flex';
+        marcadorView.style.display = 'none';
+        entrenamientoView.style.display = 'none';
+
         fetch('/ip')
             .then(response => response.json())
             .then(data => {
                 const mobileUrl = `http://${data.ip}:3000/mobile.html`;
-                new QRCode(document.getElementById("qrcode"), {
-                    text: mobileUrl, width: 128, height: 128,
-                    colorDark: "#2c3e50", colorLight: "#ffffff",
+                const qrContainer = document.getElementById("qrcode");
+                qrContainer.innerHTML = ""; // Limpiar previo
+                new QRCode(qrContainer, {
+                    text: mobileUrl, width: 140, height: 140,
+                    colorDark: "#0f172a", colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.H
                 });
             })
             .catch(err => console.error("Error obteniendo IP:", err));
 
-        hablar("Bienvenido");
+        hablar("Bienvenido al sistema de Tenis Inteligente. Puede decir Partido o Entrenamiento al móvil para comenzar.");
         recuperarEstadisticas();
     });
 }
@@ -104,7 +183,7 @@ async function recuperarEstadisticas() {
         console.log("Intentando recuperar estadísticas del servidor...");
         const response = await fetch('/match-stats');
         const data = await response.json();
-        
+
         if (data && data.points) {
             partido.matchHistory = data.points;
             console.log(`Recuperados ${data.points.length} puntos.`);
@@ -145,7 +224,9 @@ function verificarServidorTieBreak() {
 // --- LÓGICA DE PUNTUACIÓN ---
 
 socket.on('punto-registrado', (payload) => {
+    statsOverlay.classList.remove('visible');
     if (partido.isMatchFinished || partido.quienSaca === null) return;
+
 
     let quien, metrics;
     if (typeof payload === 'string') {
@@ -158,33 +239,6 @@ socket.on('punto-registrado', (payload) => {
 
     const winnerIdx = (quien === 'yo') ? 0 : 1;
     const loserIdx = (quien === 'yo') ? 1 : 0;
-
-    // Actualizar UI de métricas
-    if (metrics && metrics.strokes && metrics.strokes.length > 0) {
-        const strokes = metrics.strokes;
-        const totalStrokes = strokes.length;
-
-        // Calcular potencia media
-        const avgPower = strokes.reduce((acc, s) => acc + parseFloat(s.power), 0) / totalStrokes;
-
-        // Última trayectoria (la del golpe ganador)
-        const lastTraj = strokes[totalStrokes - 1].trajectory;
-
-        uiMetrics.power.innerText = avgPower.toFixed(1) + "G";
-        uiMetrics.strokes.innerText = totalStrokes;
-        uiMetrics.trajectory.innerText = lastTraj;
-        uiMetrics.duration.innerText = metrics.duracion_punto;
-        uiMetrics.reason.innerText = metrics.motivo || "--";
-
-        // Mostrar detalles individuales
-        uiMetrics.listaGolpes.innerHTML = "";
-        strokes.forEach((s, idx) => {
-            const span = document.createElement('span');
-            span.className = 'stroke-pill';
-            span.innerHTML = `<strong>G${idx + 1}:</strong> ${s.power}G <small>(${s.trajectory})</small>`;
-            uiMetrics.listaGolpes.appendChild(span);
-        });
-    }
 
     if (partido.isTieBreak) {
         anotarPuntoTieBreak(winnerIdx, loserIdx);
@@ -202,7 +256,9 @@ socket.on('punto-registrado', (payload) => {
     });
 
     actualizarMarcadorUI();
-    verificarCambioPista();
+
+    // Desacoplar para asegurar que la UI reaccione y las promesas/estados sincrónicos estén limpios
+    setTimeout(() => verificarCambioPista(), 0);
 });
 
 function anotarPuntoEstandar(w, l) {
@@ -269,7 +325,8 @@ function ganarJuego(w) {
     const payload = {
         ganador: w === 0 ? 'yo' : 'rival',
         marcador: `${partido.games[0]}-${partido.games[1]}`,
-        duracion: duracionJuego
+        duracion: duracionJuego,
+        setIndex: partido.currentSetIndex
     };
     socket.emit('registrar-fin-juego', payload);
 
@@ -358,13 +415,50 @@ function actualizarMarcadorUI() {
 }
 
 function verificarCambioPista() {
-    const sumaJuegos = partido.games[0] + partido.games[1];
-    const esCambio = (sumaJuegos % 2 !== 0);
-    avisoPista.style.display = esCambio ? 'block' : 'none';
+    let esCambio = false;
 
-    // Si es cambio de pista y el juego acaba de terminar (puntos a 0)
-    if (esCambio && partido.puntos[0] === 0 && partido.puntos[1] === 0) {
-        mostrarEstadisticas("Descanso de Pista");
+    if (partido.isTieBreak) {
+        // En tie-break: cambia cada 6 puntos
+        const totalPuntosTie = partido.tieBreakPoints[0] + partido.tieBreakPoints[1];
+        if (totalPuntosTie > 0 && totalPuntosTie % 6 === 0) {
+            esCambio = true;
+        }
+    } else {
+        // En juego normal, chequear si estamos entre juegos
+        if (partido.puntos[0] === 0 && partido.puntos[1] === 0) {
+            // Si games =[0,0] significa que acabamos de terminar un set o empezamos el partido
+            if (partido.games[0] === 0 && partido.games[1] === 0) {
+                if (partido.currentSetIndex > 0) {
+                    const prevSet = partido.setScores[partido.currentSetIndex - 1];
+                    const juegosPrev = prevSet[0] + prevSet[1];
+                    if (juegosPrev % 2 !== 0) {
+                        esCambio = true;
+                    }
+                }
+            } else {
+                // En medio del set, tomamos los juegos actuales del set
+                const totalJuegosEnSet = partido.games[0] + partido.games[1];
+                if (totalJuegosEnSet % 2 !== 0) {
+                    esCambio = true;
+                }
+            }
+        }
+    }
+
+    if (esCambio) {
+        avisoPista.style.display = 'block';
+    } else if (partido.puntos[0] !== 0 || partido.puntos[1] !== 0) {
+        avisoPista.style.display = 'none';
+    }
+
+    const esDescanso = (partido.isTieBreak || (partido.puntos[0] === 0 && partido.puntos[1] === 0));
+
+    if (esCambio && esDescanso) {
+        // Evitar pisar la pantalla de "Fin del Set" que ya muestra stats
+        const setRecienTerminado = (partido.games[0] === 0 && partido.games[1] === 0 && partido.matchHistory.length > 0 && !partido.isTieBreak);
+        if (!setRecienTerminado) {
+            mostrarEstadisticas("Descanso de Pista");
+        }
     }
 }
 
@@ -392,51 +486,68 @@ function calcularEstadisticas(rangoPuntos) {
 
         // Saque
         if (p.ganador === 'yo') {
-            if (m.motivo === 'Winner' && m.strokes.length === 1 && m.strokes[0].trajectory.includes('SAQUE')) {
+            if (m.motivo === 'Winner' && m.strokes && m.strokes.length === 1 && m.strokes[0].trajectory.includes('SAQUE')) {
                 stats.serves.aces++;
             }
         }
         if (p.ganador === 'rival' && m.motivo === 'Doble Falta') {
             stats.serves.doubleFaults++;
         }
-        
-        // Primeros saques dentro (Aproximación: si no hubo Segundo Saque gestual)
-        // Nota: En un sistema real trackearíamos cada intento de saque.
-        // Aquí asumimos que si se anotó punto sin marcar 'media', el 1er saque entró.
-        const huboSegundo = m.strokes.some(s => s.trajectory === '2º SAQUE');
-        if (!huboSegundo) {
-            stats.serves.firstIn++;
+
+        let isMyServe = false;
+        if (m.motivo === 'Doble Falta' && p.ganador === 'rival') {
+            isMyServe = true;
+        } else if (m.strokes && m.strokes.length > 0) {
+            if (m.strokes[0].trajectory && m.strokes[0].trajectory.includes('SAQUE')) {
+                isMyServe = true;
+            }
         }
-        stats.serves.firstTotal++;
+
+        if (isMyServe) {
+            stats.serves.firstTotal++;
+            const huboSegundo = m.strokes ? m.strokes.some(s => s.trajectory === '2º SAQUE') : false;
+            if (!huboSegundo) {
+                stats.serves.firstIn++;
+            }
+        }
 
         // Potencia y Golpes
-        m.strokes.forEach(s => {
-            const pwr = parseFloat(s.power);
-            stats.power.sum += pwr;
-            stats.power.count++;
-            if (pwr > stats.power.max) {
-                stats.power.max = pwr;
-                stats.power.maxDetail = `${s.side} ${s.trajectory}`;
-            }
-        });
+        if (m.strokes) {
+            m.strokes.forEach(s => {
+                const pwr = parseFloat(s.power);
+                stats.power.sum += pwr;
+                stats.power.count++;
+                if (pwr > stats.power.max) {
+                    stats.power.max = pwr;
+                    const isServe = s.trajectory && s.trajectory.includes('SAQUE');
+                    stats.power.maxDetail = isServe ? s.trajectory : `${s.side} ${s.trajectory}`;
+                }
+            });
+        }
 
         // Clasificación Winners / Errores (Solo para 'Yo')
         if (m.motivo === 'Winner' && p.ganador === 'yo') {
             stats.winners.total++;
-            const last = m.strokes[m.strokes.length - 1];
+            const last = m.strokes ? m.strokes[m.strokes.length - 1] : null;
             if (last) {
-                if (last.side === 'DERECHA') stats.winners.der++;
-                else stats.winners.rev++;
-                const key = `${last.side} ${last.trajectory}`;
+                const isServe = last.trajectory && last.trajectory.includes('SAQUE');
+                if (!isServe) {
+                    if (last.side === 'DERECHA') stats.winners.der++;
+                    else stats.winners.rev++;
+                }
+                const key = isServe ? last.trajectory : `${last.side} ${last.trajectory}`;
                 stats.winners.tipos[key] = (stats.winners.tipos[key] || 0) + 1;
             }
         } else if (m.motivo === 'Fallo Mío' && p.ganador === 'rival') {
             stats.errors.total++;
-            const last = m.strokes[m.strokes.length - 1];
+            const last = m.strokes ? m.strokes[m.strokes.length - 1] : null;
             if (last) {
-                if (last.side === 'DERECHA') stats.errors.der++;
-                else stats.errors.rev++;
-                const key = `${last.side} ${last.trajectory}`;
+                const isServe = last.trajectory && last.trajectory.includes('SAQUE');
+                if (!isServe) {
+                    if (last.side === 'DERECHA') stats.errors.der++;
+                    else stats.errors.rev++;
+                }
+                const key = isServe ? last.trajectory : `${last.side} ${last.trajectory}`;
                 stats.errors.tipos[key] = (stats.errors.tipos[key] || 0) + 1;
             }
         }
@@ -447,112 +558,166 @@ function calcularEstadisticas(rangoPuntos) {
 
 function mostrarEstadisticas(titulo) {
     const globalHistory = partido.matchHistory;
+    const globalGameHistory = partido.gameHistory;
     let currentPoints = [];
     let baselinePoints = null;
-    let isSetSummary = titulo.startsWith("Fin del Set");
-    let setIndexComp = -1;
+    let currentGames = [];
+    let baselineGames = null;
+    const isSetSummary = titulo.startsWith("Fin del Set") || titulo === "Fin del Partido";
 
     if (isSetSummary) {
-        // Extraer número de set (e.g., "Fin del Set 1" -> index 0)
         const match = titulo.match(/Fin del Set (\d+)/);
         if (match) {
-            setIndexComp = parseInt(match[1]) - 1;
+            const setIndexComp = parseInt(match[1]) - 1;
             currentPoints = globalHistory.filter(p => p.setIndex === setIndexComp);
-            // Si es Set 2 o 3, comparamos con los sets anteriores
+            currentGames = globalGameHistory.filter(g => g.setIndex === setIndexComp);
             if (setIndexComp > 0) {
                 baselinePoints = globalHistory.filter(p => p.setIndex < setIndexComp);
+                baselineGames = globalGameHistory.filter(g => g.setIndex < setIndexComp);
             }
+        } else {
+            // Fin del Partido: todos los puntos
+            currentPoints = globalHistory;
+            currentGames = globalGameHistory;
         }
+        // ⚠️ NO tocar ultimoIndiceDescanso aquí
     } else {
-        // Descanso de Pista: último tramo vs todo el partido
+        // Descanso de Pista: último tramo vs lo jugado anteriormente
         currentPoints = globalHistory.slice(partido.ultimoIndiceDescanso);
-        baselinePoints = globalHistory;
-        partido.ultimoIndiceDescanso = globalHistory.length;
+        currentGames = globalGameHistory.slice(partido.ultimoIndiceJuegosDescanso);
+        if (currentPoints.length === 0) return; // Guard para evitar errores de slice vacío
+        baselinePoints = partido.ultimoIndiceDescanso > 0 ? globalHistory.slice(0, partido.ultimoIndiceDescanso) : null;
+        baselineGames = partido.ultimoIndiceJuegosDescanso > 0 ? globalGameHistory.slice(0, partido.ultimoIndiceJuegosDescanso) : null;
+        partido.ultimoIndiceDescanso = globalHistory.length; // Solo se actualiza aquí
+        partido.ultimoIndiceJuegosDescanso = globalGameHistory.length;
     }
-    
+
     const statsCurrent = calcularEstadisticas(currentPoints);
     const statsBaseline = baselinePoints ? calcularEstadisticas(baselinePoints) : null;
-    
+
     document.getElementById('stats-moment').innerText = titulo;
 
     // --- Helper para Deltas ---
     const getDelta = (curr, baseline) => {
-        if (!baseline || baseline === 0 || isNaN(baseline) || !isFinite(baseline)) return 0;
-        const c = parseFloat(curr) || 0;
         const b = parseFloat(baseline);
+        if (!b || isNaN(b) || !isFinite(b)) return 0;
+        const c = parseFloat(curr) || 0;
         return ((c - b) / b * 100).toFixed(0);
+    };
+
+    const getDeltaAbs = (curr, baseline) => {
+        const c = parseFloat(curr) || 0;
+        const b = parseFloat(baseline) || 0;
+        // Quitamos decimales si ambos son enteros, de lo contrario dejamos 1 decimal
+        return (c - b).toFixed(1).replace(/\.0$/, '');
+    };
+
+    const formatDelta = (delta, inverse = false) => {
+        const numDelta = parseFloat(delta);
+        if (isNaN(numDelta) || numDelta === 0) return `<small class="delta">(0%)</small>`;
+        let colorClass = "";
+        if (numDelta > 0) colorClass = inverse ? 'negative' : 'positive';
+        else if (numDelta < 0) colorClass = inverse ? 'positive' : 'negative';
+        // Quitamos la terminación .0 visualmente si existe
+        let displayDelta = delta.toString().replace(/\.0$/, '');
+        return `<small class="delta ${colorClass}">(${numDelta > 0 ? '+' : ''}${displayDelta}%)</small>`;
     };
 
     const updateValueWithDelta = (id, curr, globValue, inverse = false) => {
         const el = document.getElementById(id);
         if (!el) return;
-        
-        let deltaText = "";
-        let colorClass = "";
 
+        let deltaText = "";
         if (statsBaseline) {
-            // Normalizar el valor del baseline al volumen de puntos actual para que la comparación sea justa
             const normalizationFactor = (baselinePoints.length / (currentPoints.length || 1)) || 1;
             const normalizedBaseline = globValue / normalizationFactor;
-            
             const delta = getDelta(curr, normalizedBaseline);
-            colorClass = delta >= 0 ? 'positive' : 'negative';
-            if (inverse) colorClass = delta <= 0 ? 'positive' : 'negative'; 
-            deltaText = `(${delta >= 0 ? '+' : ''}${delta}%)`;
+            deltaText = formatDelta(delta, inverse);
         }
-        
-        el.querySelector('.value').innerHTML = `${curr} <small class="delta ${colorClass}">${deltaText}</small>`;
+
+        el.querySelector('.value').innerHTML = `${curr} ${deltaText}`;
     };
 
     console.log(`Trigger: ${titulo}. Puntos actuales: ${currentPoints.length}. Baseline: ${baselinePoints ? baselinePoints.length : 'N/A'}`);
 
     // Winners e Inferiores
-    updateValueWithDelta('stat-winners', statsCurrent.winners.total, statsBaseline ? statsBaseline.winners.total : 0); 
+    updateValueWithDelta('stat-winners', statsCurrent.winners.total, statsBaseline ? statsBaseline.winners.total : 0);
     document.getElementById('sub-win-der').innerText = statsCurrent.winners.der;
     document.getElementById('sub-win-rev').innerText = statsCurrent.winners.rev;
-    
+
     // Errores
     updateValueWithDelta('stat-errors', statsCurrent.errors.total, statsBaseline ? statsBaseline.errors.total : 0, true);
-    
+
     // Tasa de Error (% de golpes que son fallos propios)
     const errorRate = statsCurrent.power.count > 0 ? (statsCurrent.errors.total / statsCurrent.power.count * 100).toFixed(1) : 0;
-    document.getElementById('stat-error-rate').querySelector('.value').innerText = errorRate + "%";
+    let errDeltaHTML = "";
+    if (statsBaseline && statsBaseline.power.count > 0) {
+        const globErrorRate = (statsBaseline.errors.total / statsBaseline.power.count * 100).toFixed(1);
+        errDeltaHTML = formatDelta(getDeltaAbs(errorRate, globErrorRate), true);
+    }
+    document.getElementById('stat-error-rate').querySelector('.value').innerHTML = `${errorRate}% ${errDeltaHTML}`;
 
     document.getElementById('sub-err-der').innerText = statsCurrent.errors.der;
     document.getElementById('sub-err-rev').innerText = statsCurrent.errors.rev;
 
     // Saque
     const firstServePct = statsCurrent.serves.firstTotal > 0 ? (statsCurrent.serves.firstIn / statsCurrent.serves.firstTotal * 100).toFixed(0) : 0;
-    document.getElementById('stat-first-serve').innerText = firstServePct + "%";
-    document.getElementById('stat-aces').innerText = statsCurrent.serves.aces;
-    document.getElementById('stat-double-faults').innerText = statsCurrent.serves.doubleFaults;
+    let serveDeltaHTML = "";
+    if (statsBaseline && statsBaseline.serves.firstTotal > 0) {
+        const globServePct = (statsBaseline.serves.firstIn / statsBaseline.serves.firstTotal * 100).toFixed(0);
+        serveDeltaHTML = formatDelta(getDeltaAbs(firstServePct, globServePct), false);
+    }
+    // We update innerHTML for first-serve to include the delta HTML inline
+    document.getElementById('stat-first-serve').innerHTML = `${firstServePct}% ${serveDeltaHTML}`;
+
+    let acesDeltaHTML = "";
+    if (statsBaseline && statsBaseline.serves.firstTotal > 0) {
+        const currAceRate = statsCurrent.serves.firstTotal > 0 ? (statsCurrent.serves.aces / statsCurrent.serves.firstTotal * 100).toFixed(1) : 0;
+        const globAceRate = (statsBaseline.serves.aces / statsBaseline.serves.firstTotal * 100).toFixed(1);
+        acesDeltaHTML = formatDelta(getDeltaAbs(currAceRate, globAceRate), false);
+    }
+    document.getElementById('stat-aces').innerHTML = `${statsCurrent.serves.aces} ${acesDeltaHTML}`;
+
+    let dfDeltaHTML = "";
+    if (statsBaseline && statsBaseline.serves.firstTotal > 0) {
+        const currDFRate = statsCurrent.serves.firstTotal > 0 ? (statsCurrent.serves.doubleFaults / statsCurrent.serves.firstTotal * 100).toFixed(1) : 0;
+        const globDFRate = (statsBaseline.serves.doubleFaults / statsBaseline.serves.firstTotal * 100).toFixed(1);
+        dfDeltaHTML = formatDelta(getDeltaAbs(currDFRate, globDFRate), true);
+    }
+    document.getElementById('stat-double-faults').innerHTML = `${statsCurrent.serves.doubleFaults} ${dfDeltaHTML}`;
 
     // Potencia
     const avgPwr = statsCurrent.power.count > 0 ? (statsCurrent.power.sum / statsCurrent.power.count).toFixed(1) : 0;
-    
-    let pwrDeltaText = "";
-    let pwrClass = "";
+    let pwrDeltaHTML = "";
     if (statsBaseline && statsBaseline.power.count > 0) {
         const globAvgPwr = statsBaseline.power.sum / statsBaseline.power.count;
-        const pwrDelta = getDelta(avgPwr, globAvgPwr);
-        pwrClass = pwrDelta >= 0 ? 'positive' : 'negative';
-        pwrDeltaText = `(${pwrDelta >= 0 ? '+':''}${pwrDelta}%)`;
+        pwrDeltaHTML = formatDelta(getDelta(avgPwr, globAvgPwr), false);
     }
-    
-    document.getElementById('stat-power-avg').innerHTML = `${avgPwr}G <small class="delta ${pwrClass}">${pwrDeltaText}</small>`;
-    
+    document.getElementById('stat-power-avg').innerHTML = `${avgPwr}G ${pwrDeltaHTML}`;
+
     document.getElementById('stat-power-max').innerText = statsCurrent.power.max + "G";
     document.getElementById('stat-power-max-desc').innerText = statsCurrent.power.maxDetail || "--";
 
     // Tiempos
     const avgTime = statsCurrent.time.pointCount > 0 ? (statsCurrent.time.pointSum / statsCurrent.time.pointCount).toFixed(1) : 0;
-    document.getElementById('stat-time-point').innerText = avgTime + "s";
-    
+    let pointTimeDeltaHTML = "";
+    if (statsBaseline && statsBaseline.time.pointCount > 0) {
+        const globAvgTime = (statsBaseline.time.pointSum / statsBaseline.time.pointCount).toFixed(1);
+        pointTimeDeltaHTML = formatDelta(getDelta(avgTime, globAvgTime), true); // Aumentar tiempo lo consideramos "malo" o rojo
+    }
+    document.getElementById('stat-time-point').innerHTML = `${avgTime}s ${pointTimeDeltaHTML}`;
+
     // Tiempo medio por juego
-    const playedGames = partido.gameHistory;
-    if (playedGames.length > 0) {
-        const avgGameTime = (playedGames.reduce((acc, g) => acc + g.duracion, 0) / playedGames.length).toFixed(0);
-        document.getElementById('stat-time-game').innerText = avgGameTime + "s";
+    if (currentGames.length > 0) {
+        const avgGameTime = (currentGames.reduce((acc, g) => acc + g.duracion, 0) / currentGames.length).toFixed(0);
+        let gameTimeDeltaHTML = "";
+        if (baselineGames && baselineGames.length > 0) {
+            const globAvgGameTime = (baselineGames.reduce((acc, g) => acc + g.duracion, 0) / baselineGames.length).toFixed(0);
+            gameTimeDeltaHTML = formatDelta(getDelta(avgGameTime, globAvgGameTime), true);
+        }
+        document.getElementById('stat-time-game').innerHTML = `${avgGameTime}s ${gameTimeDeltaHTML}`;
+    } else {
+        document.getElementById('stat-time-game').innerHTML = `0s`;
     }
 
     // Detalle de tipos
@@ -563,32 +728,41 @@ function mostrarEstadisticas(titulo) {
     };
     document.getElementById('winner-types').innerHTML = formatTipos(statsCurrent.winners.tipos);
     document.getElementById('error-types').innerHTML = formatTipos(statsCurrent.errors.tipos);
-    
+
     // Mostrar Overlay
     statsOverlay.classList.add('visible');
 }
 
 // --- SINCRONIZACIÓN DE MODOS ---
 
+/**
+ * Sincronización de estados y visibilidad de vistas
+ */
 socket.on('modo-actualizado', (modo) => {
     if (modoTexto) modoTexto.innerText = modo;
+    trainingActive = (modo === "MODO ENTRENAMIENTO");
 
     if (modo === "MODO PARTIDO") {
         document.body.classList.add('match-active');
-        marcadorPartido.style.display = 'block';
-        qrSection.style.display = 'none';
-        statusContainer.style.display = 'none';
-        if (pingButton) pingButton.style.display = 'none';
+        lobbyView.style.display = 'none';
+        marcadorView.style.display = 'block';
+        entrenamientoView.style.display = 'none';
 
         if (partido.quienSaca === null) {
-            hablar("Modo partido activado.");
+            hablar("Modo partido activado. El móvil está listo para registrar golpes. Antes de comenzar diga quien va a comenzar sacando");
         }
-    } else {
+    } else if (modo === "MODO ENTRENAMIENTO") {
         document.body.classList.remove('match-active');
-        marcadorPartido.style.display = 'none';
-        qrSection.style.display = 'block';
-        statusContainer.style.display = 'block';
-        if (pingButton) pingButton.style.display = 'block';
+        lobbyView.style.display = 'none';
+        marcadorView.style.display = 'none';
+        entrenamientoView.style.display = 'flex';
+        hablar("Modo entrenamiento activado. Seleccione su golpe en el controlador.");
+    } else {
+        // MODO DASHBOARD / LOBBY
+        document.body.classList.remove('match-active');
+        lobbyView.style.display = 'flex';
+        marcadorView.style.display = 'none';
+        entrenamientoView.style.display = 'none';
     }
 });
 
@@ -603,4 +777,384 @@ function hablar(mensaje) {
     const utterance = new SpeechSynthesisUtterance(mensaje);
     utterance.lang = 'es-ES';
     synth.speak(utterance);
+}
+
+// --- LÓGICA DE ENTRENAMIENTO RECIBIDA DEL MÓVIL ---
+
+// Variable para guardar el último frame recibido
+let ultimoFrameVideo = new Image();
+
+socket.on('render-video', (frameData) => {
+    ultimoFrameVideo.src = frameData;
+});
+
+// Función auxiliar para obtener visibilidad de forma robusta
+function getVisibility(p) {
+    if (!p) return 0;
+    return p.visibility !== undefined ? p.visibility : (p.score !== undefined ? p.score : 0);
+}
+
+socket.on('training-data', (data) => {
+    if (!ctxEntrenamiento || !trainingActive) return;
+
+    // --- DIAGNÓSTICO EN PANTALLA ---
+    const debugDiv = document.getElementById('debug-datos');
+    if (debugDiv && data.landmarks && data.landmarks.length > 0) {
+        const hR = data.landmarks[12] || {};
+        const hL = data.landmarks[11] || {};
+        const visR = getVisibility(hR);
+        const visL = getVisibility(hL);
+        const status = (visR > 0.1 && visL > 0.1) ? 'POSICIONADO' : 'BUSCANDO JUGADOR...';
+        debugDiv.innerHTML = `STATUS: ${status}<br><b>MODO: ${subModoTraining}</b>`;
+        debugDiv.style.color = (status === 'POSICIONADO') ? 'lime' : 'orange';
+    }
+    // -------------------------------
+
+    // Asegurar dimensiones correctas una sola vez (Bug 3)
+    if (canvasEntrenamiento.offsetWidth > 0 &&
+        canvasEntrenamiento.width !== canvasEntrenamiento.offsetWidth) {
+        canvasEntrenamiento.width = canvasEntrenamiento.offsetWidth;
+        canvasEntrenamiento.height = canvasEntrenamiento.offsetHeight;
+    }
+
+    const landmarks = data.landmarks;
+    if (landmarks && landmarks.length > 0) {
+        if (canvasEntrenamiento.width === 0 || canvasEntrenamiento.height === 0) {
+            canvasEntrenamiento.width = canvasEntrenamiento.offsetWidth || 800;
+            canvasEntrenamiento.height = canvasEntrenamiento.offsetHeight || 600;
+        }
+    } else if (subModoTraining !== 'LINEA') {
+        // Solo cortamos si no hay landmarks Y no estamos en modo línea
+        return;
+    }
+
+    ctxEntrenamiento.clearRect(0, 0, canvasEntrenamiento.width, canvasEntrenamiento.height);
+
+    // --- PANTALLA DE SELECCIÓN INICIAL ---
+    if (!subModoTraining) {
+        ctxEntrenamiento.fillStyle = "#111";
+        ctxEntrenamiento.fillRect(0, 0, canvasEntrenamiento.width, canvasEntrenamiento.height);
+
+        ctxEntrenamiento.fillStyle = "white";
+        ctxEntrenamiento.textAlign = "center";
+        ctxEntrenamiento.font = "bold 32px Arial";
+        ctxEntrenamiento.fillText("MODO ENTRENAMIENTO", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2 - 40);
+
+        const accentCol = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
+        ctxEntrenamiento.font = "24px Arial";
+        ctxEntrenamiento.fillStyle = accentCol;
+        ctxEntrenamiento.fillText("DI 'FONDO', 'SAQUE' O 'LÍNEA' EN EL MÓVIL", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2 + 20);
+
+        ctxEntrenamiento.fillStyle = "#888";
+        ctxEntrenamiento.font = "16px Arial";
+        ctxEntrenamiento.fillText("(La cámara se activará al elegir modo)", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2 + 60);
+
+        ctxEntrenamiento.textAlign = "start"; // Reset
+        return;
+    }
+
+    // Dibujar vídeo si está disponible (solo si hay modo seleccionado)
+    if (ultimoFrameVideo.src && ultimoFrameVideo.naturalWidth > 0) {
+        ctxEntrenamiento.globalAlpha = 0.6;
+        ctxEntrenamiento.drawImage(ultimoFrameVideo, 0, 0,
+            canvasEntrenamiento.width, canvasEntrenamiento.height);
+        ctxEntrenamiento.globalAlpha = 1.0;
+    }
+
+    // --- RENDERIZADO DE SKELETON Y ANÁLISIS ---
+    dibujarPose(ctxEntrenamiento, landmarks);
+
+    if (drillFinalizado) {
+        ctxEntrenamiento.fillStyle = "rgba(0,0,0,0.85)";
+        ctxEntrenamiento.fillRect(0, 0, canvasEntrenamiento.width, canvasEntrenamiento.height);
+        ctxEntrenamiento.fillStyle = "gold";
+        ctxEntrenamiento.textAlign = "center";
+        ctxEntrenamiento.font = "bold 42px Arial";
+        ctxEntrenamiento.fillText("SERIE COMPLETADA", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2 - 20);
+        ctxEntrenamiento.fillStyle = "white";
+        ctxEntrenamiento.font = "32px Arial";
+        ctxEntrenamiento.fillText(`RESULTADO: ${contadorExitos} de 5 perfectos`, canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2 + 40);
+        ctxEntrenamiento.textAlign = "start";
+        return;
+    }
+
+    if (subModoTraining === 'FONDO') {
+        const h = landmarks[12], c = landmarks[14], m = landmarks[16], hip = landmarks[24];
+
+        if (h && c && m && hip && getVisibility(h) > 0.1 && getVisibility(c) > 0.1 && getVisibility(m) > 0.1) {
+            const anguloCodo = calcularAngulo(h, c, m);
+            const separacionHombro = calcularAngulo(hip, h, c);
+            const now = Date.now();
+
+            // CONFIGURACIÓN DINÁMICA POR TIPO DE GOLPE
+            const prepThreshold = 115;
+            const impactThreshold = 145; // Equilibrio: brazo estirado pero no exige perfección absoluta
+
+            // 1. Detección de Preparación (Codo doblado)
+            if (anguloCodo < prepThreshold) {
+                estadoPreparacion = true;
+                maxAnguloEnSalto = 0;
+                maxSeparacionEnSalto = 0;
+            }
+
+            // 2. Detección de Impacto (Extensión con cooldown de 1.5s)
+            if (estadoPreparacion && anguloCodo >= impactThreshold && now - ultimaDeteccionDrill > 1500) {
+                contadorIntentos++;
+                ultimaDeteccionDrill = now;
+                estadoPreparacion = false;
+
+                // Guardamos el pico alcanzado en este golpe exacto
+                const extensionFinal = Math.max(anguloCodo, maxAnguloEnSalto);
+                const separacionFinal = Math.max(separacionHombro, maxSeparacionEnSalto);
+
+                // Exito balanceado: brazo un poco separado (27) y extensión decente (145)
+                const esExito = (extensionFinal >= 145 && separacionFinal >= 27);
+                if (esExito) contadorExitos++;
+
+                if (contadorIntentos >= 5) {
+                    drillFinalizado = true;
+                    hablar(`Serie terminada. Resultado: ${contadorExitos} de cinco.`);
+                } else {
+                    hablar(`Golpe ${contadorIntentos} de 5.`);
+                }
+            }
+
+            // Monitorización de picos
+            if (estadoPreparacion) {
+                if (anguloCodo > maxAnguloEnSalto) maxAnguloEnSalto = anguloCodo;
+                if (separacionHombro > maxSeparacionEnSalto) maxSeparacionEnSalto = separacionHombro;
+            }
+
+            // Feedback Visual (Sincronizado con la lógica de éxito)
+            let mensaje = "";
+            let color = "white";
+
+            const okExtension = (anguloCodo >= 145);
+            const okSeparacion = (separacionHombro >= 27); // 27 evita el pegado al cuerpo pero no es tan estricto como 32
+
+            if (okExtension && okSeparacion) {
+                mensaje = "¡PERFECTO!";
+                color = "#00FF00"; // Verde
+            } else if (okExtension && !okSeparacion) {
+                mensaje = "ESTIRADO, PERO SEPARA CODO";
+                color = "#FFA500"; // Naranja
+            } else if (anguloCodo > 130) {
+                mensaje = "GOLPEANDO...";
+                color = "#FFFF00"; // Amarillo
+            } else {
+                mensaje = "PREPARANDO...";
+                color = "white";
+            }
+
+            ctxEntrenamiento.fillStyle = color;
+            ctxEntrenamiento.font = "bold 34px Arial";
+            ctxEntrenamiento.fillText(mensaje, 50, 80);
+
+            ctxEntrenamiento.fillStyle = "white";
+            ctxEntrenamiento.font = "24px Arial";
+            ctxEntrenamiento.fillText(`GOLPE ${contadorIntentos}/5 | ÉXITOS: ${contadorExitos}`, 50, 120);
+
+            ctxEntrenamiento.font = "14px Arial";
+            ctxEntrenamiento.fillStyle = "#888";
+
+            if (estadoPreparacion) {
+                ctxEntrenamiento.beginPath();
+                ctxEntrenamiento.arc(30, 70, 8, 0, Math.PI * 2);
+                ctxEntrenamiento.fillStyle = "cyan";
+                ctxEntrenamiento.fill();
+            }
+
+            txtAngulo.innerText = Math.round(anguloCodo) + "°";
+        }
+    } else if (subModoTraining === 'SAQUE') {
+        const hR = landmarks[12], eR = landmarks[14], wR = landmarks[16], orejaR = landmarks[8];
+
+        if (hR && eR && wR && orejaR && getVisibility(hR) > 0.1 && getVisibility(wR) > 0.1) {
+            const anguloCodo = calcularAngulo(hR, eR, wR);
+
+            // DETECTAR INICIO DE SAQUE (Mano por encima de la cabeza)
+            if (wR.y < orejaR.y) {
+                if (!serveInProgress) {
+                    serveInProgress = true;
+                    maxAnguloEnSalto = 0;
+                }
+                // Monitorizar el mejor ángulo alcanzado en toda la fase alta
+                if (anguloCodo > maxAnguloEnSalto) {
+                    maxAnguloEnSalto = anguloCodo;
+                }
+            }
+
+            // DETECTAR FIN DE SAQUE (Mano baja del hombro)
+            if (serveInProgress && wR.y > hR.y) {
+                contadorIntentos++;
+                const esExito = maxAnguloEnSalto > 165;
+                if (esExito) contadorExitos++;
+
+                if (contadorIntentos >= 5) {
+                    drillFinalizado = true;
+                    hablar(`Saque finalizado. Resultado: ${contadorExitos} de 5.`);
+                } else {
+                    hablar(`Saque ${contadorIntentos} de 5.`);
+                }
+
+                serveInProgress = false;
+                maxAnguloEnSalto = 0;
+            }
+
+            // Feedback Visual (Tiempo Real)
+            ctxEntrenamiento.fillStyle = "white";
+            ctxEntrenamiento.font = "bold 30px Arial";
+            ctxEntrenamiento.fillText(`SAQUE ${contadorIntentos}/5 | ÉXITOS: ${contadorExitos}`, 60, 80);
+
+            if (serveInProgress) {
+                ctxEntrenamiento.fillStyle = (maxAnguloEnSalto > 165) ? "lime" : "yellow";
+                ctxEntrenamiento.font = "24px Arial";
+                ctxEntrenamiento.fillText(maxAnguloEnSalto > 165 ? "¡MÁXIMA EXTENSIÓN!" : "ESTIRA MÁS EL BRAZO", 60, 120);
+                ctxEntrenamiento.font = "18px Arial";
+                ctxEntrenamiento.fillText(`Mejor ángulo: ${Math.round(maxAnguloEnSalto)}°`, 60, 150);
+            } else {
+                ctxEntrenamiento.font = "20px Arial";
+                ctxEntrenamiento.fillText("Preparado para el impacto...", 60, 120);
+            }
+        }
+        txtAngulo.innerText = "--";
+    } else if (subModoTraining === 'LINEA') {
+        // --- MODO LÍNEA (TEACHABLE MACHINE) ---
+        if (tmModel && !isProcessingTM && ultimoFrameVideo.src && ultimoFrameVideo.naturalWidth > 0) {
+            isProcessingTM = true; // Bloquear nuevas predicciones hasta terminar esta
+
+            tmModel.predict(ultimoFrameVideo).then(predictions => {
+                // Dibujar fondo del panel de feedback
+                ctxEntrenamiento.fillStyle = "rgba(0, 0, 0, 0.6)";
+                ctxEntrenamiento.fillRect(20, 20, 350, 150);
+
+                ctxEntrenamiento.fillStyle = "white";
+                ctxEntrenamiento.font = "bold 20px Arial";
+                ctxEntrenamiento.fillText("MODO LÍNEA - CONFIANZA", 40, 50);
+
+                let isPisando = false;
+                let maxY = 80;
+
+                // Mostrar todas las clases y sus porcentajes
+                predictions.forEach((p, index) => {
+                    const prob = (p.probability * 100).toFixed(1);
+                    const isWinner = p.probability > 0.5;
+
+                    ctxEntrenamiento.fillStyle = isWinner ? "#fbbf24" : "#aaa";
+                    ctxEntrenamiento.font = isWinner ? "bold 18px Arial" : "16px Arial";
+                    ctxEntrenamiento.fillText(`${p.className}: ${prob}%`, 40, maxY + (index * 25));
+
+                    if (p.className.toUpperCase().includes("PISANDO") && p.probability > 0.7) {
+                        isPisando = true;
+                    }
+                });
+
+                // Feedback visual gigante si está pisando
+                if (isPisando) {
+                    ctxEntrenamiento.fillStyle = "rgba(255, 0, 0, 0.3)";
+                    ctxEntrenamiento.fillRect(0, 0, canvasEntrenamiento.width, canvasEntrenamiento.height);
+
+                    ctxEntrenamiento.fillStyle = "#ff4444";
+                    ctxEntrenamiento.font = "bold 48px Arial";
+                    ctxEntrenamiento.textAlign = "center";
+                    ctxEntrenamiento.fillText("¡PISANDO LÍNEA!", canvasEntrenamiento.width / 2, canvasEntrenamiento.height - 100);
+                    ctxEntrenamiento.textAlign = "start";
+                } else {
+                    ctxEntrenamiento.fillStyle = "white";
+                    ctxEntrenamiento.font = "16px Arial";
+                    ctxEntrenamiento.fillText("ESTADO: OK", 40, 150);
+                }
+
+                const now = Date.now();
+                if (isPisando && now - lastFeedbackTime > 3000) {
+                    hablar("¡Pie fuera!");
+                    lastFeedbackTime = now;
+                }
+
+                isProcessingTM = false; // Liberar semáforo
+            }).catch(err => {
+                console.error("Error en predicción TM:", err);
+                isProcessingTM = false;
+            });
+        } else if (!isProcessingTM && isTMModelLoading) {
+            ctxEntrenamiento.fillStyle = "white";
+            ctxEntrenamiento.font = "20px Arial";
+            ctxEntrenamiento.fillText("Cargando modelo de detección...", 60, 100);
+        } else if (!isProcessingTM && !tmModel) {
+            ctxEntrenamiento.fillStyle = "#ff4444";
+            ctxEntrenamiento.font = "16px Arial";
+            ctxEntrenamiento.fillText("Error: Asegúrate de tener la carpeta 'my_model' en public/", 40, 100);
+        }
+    }
+});
+
+socket.on('submodo-actualizado', (submodo) => {
+    subModoTraining = submodo;
+    reiniciarDrill(); // Resetear al cambiar modo
+
+    if (submodo === 'LINEA') {
+        cargarModeloLinea();
+        hablar("Modo detección de línea activado. Vigila donde pisas.");
+    } else {
+        hablar(`Modo ${submodo.toLowerCase()} activado. Empezamos serie de cinco.`);
+    }
+});
+
+socket.on('reiniciar-drill', () => {
+    reiniciarDrill();
+    hablar("Serie reiniciada. ¡Vamos otra vez!");
+});
+
+function calcularAngulo(A, B, C) {
+    let radians = Math.atan2(C.y - B.y, C.x - B.x) - Math.atan2(A.y - B.y, A.x - B.x);
+    let angle = Math.abs((radians * 180.0) / Math.PI);
+    if (angle > 180.0) angle = 360 - angle;
+    return angle;
+}
+
+// Eliminado duplicado de lastFeedbackTime
+// Eliminada evaluarTecnicaFrontal para simplificar según petición de usuario
+
+
+function updateTip(id, text, type) {
+    const el = document.getElementById(id);
+    const status = el.querySelector('.tip-status');
+    status.innerText = text;
+    el.className = 'tip-card ' + (type || '');
+}
+
+function dibujarPose(ctx, landmarks) {
+    const w = canvasEntrenamiento.width;
+    const h = canvasEntrenamiento.height;
+
+    // Obtener colores computados (Canvas no entiende var(--...))
+    const accentCol = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#3498db';
+    const goldCol = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#fbbf24';
+
+    // Conexiones de ambos brazos y torso
+    const conexiones = [[12, 14], [14, 16], [11, 13], [13, 15], [12, 24], [11, 23]];
+
+    ctx.lineWidth = 5;
+    conexiones.forEach(([i, j]) => {
+        const p1 = landmarks[i];
+        const p2 = landmarks[j];
+        if (p1 && p2 && getVisibility(p1) > 0.1 && getVisibility(p2) > 0.1) {
+            ctx.beginPath();
+            ctx.moveTo(p1.x * w, p1.y * h);
+            ctx.lineTo(p2.x * w, p2.y * h);
+            ctx.strokeStyle = ([14, 13].includes(i) || [14, 13].includes(j)) ? "rgba(52, 152, 219, 0.8)" : "white";
+            ctx.stroke();
+        }
+    });
+
+    // Puntos clave
+    const keys = [11, 12, 13, 14, 15, 16, 23, 24];
+    landmarks.forEach((p, idx) => {
+        if (p && getVisibility(p) > 0.1 && keys.includes(idx)) {
+            ctx.beginPath();
+            ctx.arc(p.x * w, p.y * h, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = ([15, 16].includes(idx)) ? accentCol : "white";
+            ctx.fill();
+        }
+    });
 }

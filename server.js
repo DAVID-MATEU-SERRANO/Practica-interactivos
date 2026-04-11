@@ -50,7 +50,7 @@ app.get('/ip', (req, res) => {
 });
 
 // Endpoint para recuperar las estadísticas guardadas
-app.get('/match-stats', (req, res) => {
+app.get('/match-stats', (_, res) => {
     try {
         if (fs.existsSync(STATS_FILE)) {
             const data = fs.readFileSync(STATS_FILE, 'utf8');
@@ -74,20 +74,15 @@ io.on('connection', (socket) => {
 
     // Evento para sincronizar el cambio de modo (Partido/Entrenamiento)
     socket.on('cambiar-modo', (modo) => {
-        console.log('Cambiando sistema a modo: ' + modo);
         io.emit('modo-actualizado', modo);
     });
 
     // Evento para resetear el sistema a la pantalla inicial
     socket.on('resetear-a-inicio', () => {
-        console.log('Reseteando sistema a inicio');
         io.emit('reset-confirmado');
     });
 
-    // Evento para retransmitir datos de sensores del móvil al portátil
-    socket.on('datos-sensor', (data) => {
-        socket.broadcast.emit('render-portatil', data);
-    });
+
 
     // Evento para anotar puntos en modo partido con métricas
     socket.on('anotar-punto', (payload) => {
@@ -99,16 +94,6 @@ io.on('connection', (socket) => {
             quien = payload.quien;
             metrics = payload.metrics;
         }
-
-        console.log(`\n🎾 PUNTO PARA: ${quien.toUpperCase()}`);
-        console.log(`   - Motivo: ${metrics.motivo || 'No especificado'}`);
-        if (metrics.strokes) {
-            console.log(`   - Golpes totales: ${metrics.strokes.length}`);
-            metrics.strokes.forEach((s, i) => {
-                console.log(`   - Golpe ${i + 1}: ${s.power}G | ${s.trajectory}`);
-            });
-        }
-        console.log(`   - Duración: ${metrics.duracion_punto}\n`);
 
         // Guardar el punto en las estadísticas
         matchStats.points.push({
@@ -124,7 +109,6 @@ io.on('connection', (socket) => {
 
     // Evento para registrar el fin de un juego
     socket.on('registrar-fin-juego', (gameData) => {
-        console.log('Juego finalizado:', gameData);
         matchStats.games.push({
             timestamp: Date.now(),
             ...gameData
@@ -132,15 +116,18 @@ io.on('connection', (socket) => {
         saveStats();
     });
 
+    // Evento para cambiar el sub-modo de entrenamiento (Fondo/Saque)
+    socket.on('cambiar-submodo', (submodo) => {
+        io.emit('submodo-actualizado', submodo);
+    });
+
     // Evento para sincronizar el saque cuando cambia el juego/marcador
     socket.on('notificar-saque', (quien) => {
-        console.log('Cambio de saque notificado por el marcador: ' + quien);
         io.emit('saque-actualizado', quien);
     });
 
     // Evento para definir el saque inicial desde el móvil
     socket.on('definir-saque', (quien) => {
-        console.log('Saque inicial definido por el móvil: ' + quien);
         io.emit('saque-definido', quien);
     });
 
@@ -150,14 +137,19 @@ io.on('connection', (socket) => {
         io.emit('audio-actualizado', estado);
     });
 
-    // Diagnóstico: evento 'ping' del ejemplo de referencia
-    socket.on('ping', (msg) => {
-        console.log('Ping recibido: ', JSON.stringify(msg));
-        socket.emit('pong', 'pong');
+
+
+    // --- MODO ENTRENAMIENTO ---
+    socket.on('training-data', (data) => {
+        if (data.landmarks) {
+        }
+        // Reenviamos los landmarks a todos los clientes (el Dashboard los procesará)
+        io.emit('training-data', data);
     });
 
-    socket.on('debug-logs', (msg) => {
-        console.log(`🔍 [DEBUG MÓVIL] ${msg}`);
+    socket.on('video-frame', (frame) => {
+        // Reenviar el frame de video a todos los demás (el portátil)
+        io.emit('render-video', frame);
     });
 
     socket.on('disconnect', () => {

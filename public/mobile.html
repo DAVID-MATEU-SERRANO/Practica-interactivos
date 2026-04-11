@@ -5,70 +5,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tenis Inteligente - Móvil</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-    <!-- Pantalla de Inicio (Overlay) para activar sensores en el móvil -->
+    <!-- Pantalla de Inicio (Overlay) -->
     <div id="start-overlay">
         <div class="overlay-content">
             <h1>CONTROLADOR 📱</h1>
             <p>Tenis Inteligente</p>
-            <button id="btn-iniciar">CONECTAR SENSORES</button>
+            <button id="btn-iniciar" class="btn-premium">CONECTAR SENSORES</button>
         </div>
     </div>
 
-    <!-- Contenido del Móvil (Oculto hasta pulsar Iniciar) -->
-    <div id="mobile-content" style="display: none; padding: 20px; text-align: center;">
-        <h1>Controlador Móvil</h1>
-        
-        <!-- Indicador de Asistente de Voz -->
-        <div id="voice-status" class="status-indicator">
-            🎤 Escuchando comandos: <span id="voice-label">Iniciando...</span>
+    <!-- Contenido del Móvil (Estatus de Sensor) -->
+    <div id="mobile-content" style="display: none; height: 100vh; display: flex; align-items: center; justify-content: center;">
+        <div class="sensor-active-container">
+            <div class="pulse-circle"></div>
+            <h1 class="sensor-status-text">SENSOR ACTIVO</h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Enviando datos al portátil...</p>
+            
+            <div id="feedback-gesto" style="margin-top: 40px; font-weight: bold; min-height: 1.5em; text-align: center; color: var(--accent);"></div>
         </div>
 
-        <button onclick="cambiarModo('MODO PARTIDO')">MODO PARTIDO</button>
-        <button onclick="cambiarModo('MODO ENTRENAMIENTO')">MODO ENTRENAMIENTO</button>
-
-        <!-- Selección de Saque Inicial (Solo al empezar partido) -->
-        <div id="seccion-saque" style="display: none; margin-top: 20px; text-align: center;">
-            <h3 style="color: var(--gold); border: 2px solid var(--gold); padding: 20px; border-radius: 15px;">
-                🎤 Diga "YO" o "RIVAL" para el saque inicial
-            </h3>
+        <!-- Elementos ocultos para MediaPipe y Voz -->
+        <div style="display: none;">
+            <div id="estado"></div>
+            <div id="voice-label"></div>
+            <video id="webcam" autoplay playsinline style="width: 480px; height: 360px;"></video>
+            <canvas id="output_canvas" style="width: 480px; height: 360px;"></canvas>
         </div>
-
-        <!-- Controles de Modo Partido (Gestos) -->
-        <div id="controles-partido" style="display: none; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 20px; text-align: center;">
-            <div id="guia-gestos" class="glass" style="padding: 20px; border-radius: 15px; margin-top:10px;">
-                <p style="font-size: 0.9rem; color: #aaa;">GESTOS DE PUNTUACIÓN (ROTACIÓN):</p>
-                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; font-size: 0.8rem; text-align: left;">
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="color: var(--success-color);">1 Giro ↺ (Antihorario)</span>
-                        <span>PK YO (Winner)</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="color: var(--success-color);">1 Giro ↻ (Horario)</span>
-                        <span>PK YO (Fallo Rival)</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="color: var(--error-color);">2 Giros ↺ (Antihorario)</span>
-                        <span>PK RIVAL (Winner)</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="color: var(--error-color);">2 Giros ↻ (Horario)</span>
-                        <span>PK RIVAL (Fallo Mío)</span>
-                    </div>
-                </div>
-                <p id="feedback-gesto" style="margin-top: 15px; font-weight: bold; min-height: 1.2em;"></p>
-            </div>
-        </div>
-
-        <p id="estado">Estado: Desconectado</p>
-        <button id="pingButton">Enviar Ping (Prueba)</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="js/mobile.js"></script>
+    <script type="module" src="js/mobile.js"></script>
 </body>
 
 </html>

@@ -4,180 +4,222 @@
 <head>
     <meta charset="UTF-8">
     <title>Tenis Inteligente - Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Teachable Machine Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 </head>
 
 <body>
-    <!-- Pantalla de Inicio (Overlay) para activar el audio -->
+    <!-- Pantalla de Inicio (Overlay) -->
     <div id="start-overlay">
         <div class="overlay-content">
             <h1>TENIS INTELIGENTE 🎾</h1>
-            <p>Sistema de Análisis y Control Ubicuo</p>
-            <button id="btn-iniciar">INICIAR SISTEMA</button>
+            <p>Sistema de Análisis Ubicuo de Alto Rendimiento</p>
+            <button id="btn-iniciar" class="btn-premium">INICIAR SISTEMA</button>
         </div>
     </div>
 
     <div id="dashboard-content" style="display: none;">
-        <h1>Panel Principal (Portátil)</h1>
-    <div id="status-container">
-        <p>Modo Actual: <span id="modo-texto">ESPERANDO SELECCIÓN...</span></p>
-    </div>
+        <!-- Lobby de Selección (Se muestra tras Iniciar) -->
+        <div id="lobby-view" class="lobby-container">
+            <div class="mode-cards">
+                <div class="mode-card glass" id="card-partido">
+                    <div class="voice-badge">Diga "PARTIDO"</div>
+                    <h2>MODO PARTIDO</h2>
+                    <p>Seguimiento de marcador con gestos y estadísticas tácticas.</p>
+                </div>
+                <div class="mode-card glass" id="card-entrenamiento">
+                    <div class="voice-badge">Diga "ENTRENAMIENTO"</div>
+                    <h2>MODO ENTRENAMIENTO</h2>
+                    <p>Perfeccione su técnica con análisis biomecánico MediaPipe.</p>
+                </div>
+            </div>
 
-    <!-- Marcador de Partido (Profesional) -->
-    <div id="marcador-partido" style="display: none;">
-        <div class="marcador-header">MARCADOR EN VIVO</div>
-        <div class="marcador-tabla">
-            <div class="fila-marcador header">
-                <div class="col-nombre">JUGADOR</div>
-                <div class="col-set">S1</div>
-                <div class="col-set">S2</div>
-                <div class="col-set">S3</div>
-                <div class="col-puntos">PTOS</div>
-            </div>
-            <div class="fila-marcador" id="fila-yo">
-                <div class="col-nombre">YO <span class="pelota-saque" id="saque-yo">🎾</span></div>
-                <div class="col-set" id="s1-yo">0</div>
-                <div class="col-set" id="s2-yo">0</div>
-                <div class="col-set" id="s3-yo">0</div>
-                <div class="col-puntos" id="puntos-yo">0</div>
-            </div>
-            <div class="fila-marcador" id="fila-rival">
-                <div class="col-nombre">RIVAL <span class="pelota-saque" id="saque-rival">🎾</span></div>
-                <div class="col-set" id="s1-rival">0</div>
-                <div class="col-set" id="s2-rival">0</div>
-                <div class="col-set" id="s3-rival">0</div>
-                <div class="col-puntos" id="puntos-rival">0</div>
+            <!-- Contenedor para el código QR -->
+            <div id="qr-section" class="glass" style="margin-top: 20px;">
+                <p style="font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent);">
+                    Vincular Dispositivo Móvil</p>
+                <div id="qrcode"></div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 12px;">Escanea para activar los
+                    sensores</p>
             </div>
         </div>
-        <div id="aviso-pista" style="display: none;">🔄 CAMBIO DE PISTA</div>
-    </div>
 
-    <!-- Overlay de Estadísticas de Partido (Descansos) -->
-    <div id="stats-overlay" class="glass">
-        <div class="stats-header">
-            <div class="stats-icon">📊</div>
-            <div class="stats-title-group">
-                <h3>RESUMEN TÁCTICO</h3>
-                <p id="stats-moment">Descanso de Pista</p>
-            </div>
-            <button id="close-stats">×</button>
-        </div>
-        
-        <div class="stats-container">
-            <!-- Columna Ataque -->
-            <div class="stats-column">
-                <h4>ATAQUE</h4>
-                <div class="stat-item" id="stat-winners">
-                    <span class="label">Total Winners</span>
-                    <span class="value">0 <small class="delta">(0%)</small></span>
-                </div>
-                <div class="stat-subgrid">
-                    <div class="stat-subitem"><span>Derecha</span> <b id="sub-win-der">0</b></div>
-                    <div class="stat-subitem"><span>Revés</span> <b id="sub-win-rev">0</b></div>
-                </div>
-                <div class="stat-detail" id="winner-types">
-                    <!-- P/L/C counts -->
-                </div>
+        <!-- Vista de Marcador (Oculta por defecto) -->
+        <div id="marcador-view" style="display: none; text-align: center;">
+            <div id="status-container" class="glass"
+                style="max-width: fit-content; margin: 20px auto; padding: 10px 24px;">
+                <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">MODO ACTIVO: <span id="modo-texto"
+                        style="color: var(--accent); font-weight: 700;">--</span></p>
             </div>
 
-            <!-- Columna Defensa (Fallos) -->
-            <div class="stats-column">
-                <h4>ERRORES</h4>
-                <div class="stat-item" id="stat-errors">
-                    <span class="label">Total Fallos</span>
-                    <span class="value">0 <small class="delta">(0%)</small></span>
-                </div>
-                <div class="stat-subgrid">
-                    <div class="stat-subitem"><span>Derecha</span> <b id="sub-err-der">0</b></div>
-                    <div class="stat-subitem"><span>Revés</span> <b id="sub-err-rev">0</b></div>
-                </div>
-                <div class="stat-detail" id="error-types">
-                    <!-- P/L/C counts -->
-                </div>
-            </div>
-
-            <!-- Columna Saque & Ritmo -->
-            <div class="stats-column">
-                <h4>SAQUE & RITMO</h4>
-                <div class="stat-row-metrics">
-                    <div class="mini-stat">
-                        <span class="label">1er Saque %</span>
-                        <span id="stat-first-serve" class="value">0%</span>
+            <div class="marcador-layout"
+                style="display: flex; gap: 20px; align-items: stretch; justify-content: center; width: 95%; max-width: 1400px; margin: 0 auto; min-height: 80vh;">
+                <!-- Columna Izquierda -->
+                <div class="marcador-main-col" style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+                    <div id="marcador-partido" class="glass"
+                        style="width: 100%; margin: 0; padding: 32px; flex-shrink: 0;">
+                        <div class="marcador-header">MARCADOR EN VIVO</div>
+                        <div class="marcador-tabla">
+                            <div class="fila-marcador header">
+                                <div class="col-nombre">JUGADOR</div>
+                                <div class="col-set">S1</div>
+                                <div class="col-set">S2</div>
+                                <div class="col-set">S3</div>
+                                <div class="col-puntos">PTOS</div>
+                            </div>
+                            <div class="fila-marcador" id="fila-yo">
+                                <div class="col-nombre">YO <span class="pelota-saque" id="saque-yo"
+                                        style="visibility: hidden;">🎾</span></div>
+                                <div class="col-set" id="s1-yo">0</div>
+                                <div class="col-set" id="s2-yo">0</div>
+                                <div class="col-set" id="s3-yo">0</div>
+                                <div class="col-puntos" id="puntos-yo">0</div>
+                            </div>
+                            <div class="fila-marcador" id="fila-rival">
+                                <div class="col-nombre">RIVAL <span class="pelota-saque" id="saque-rival"
+                                        style="visibility: hidden;">🎾</span></div>
+                                <div class="col-set" id="s1-rival">0</div>
+                                <div class="col-set" id="s2-rival">0</div>
+                                <div class="col-set" id="s3-rival">0</div>
+                                <div class="col-puntos" id="puntos-rival">0</div>
+                            </div>
+                        </div>
+                        <div id="aviso-pista" style="display: none;">🔄 CAMBIO DE PISTA</div>
                     </div>
-                    <div class="mini-stat">
-                        <span class="label">Aces</span>
-                        <span id="stat-aces" class="value">0</span>
+
+                    <!-- Panel de métricas movido a stats-overlay -->
+                </div> <!-- Fin Columna Izquierda -->
+
+                <!-- Columna Derecha: Estadísticas Overlay (Ahora panel lateral) -->
+                <div id="stats-overlay" class="glass">
+                    <div class="stats-header">
+                        <div class="stats-icon">📊</div>
+                        <div class="stats-title-group">
+                            <h3>RESUMEN TÁCTICO</h3>
+                            <p id="stats-moment">Descanso de Pista</p>
+                        </div>
+                        <button id="close-stats">×</button>
                     </div>
-                    <div class="mini-stat">
-                        <span class="label">Dobles F.</span>
-                        <span id="stat-double-faults" class="value">0</span>
+
+                    <div class="stats-container">
+                        <div class="stats-column">
+                            <h4>ATAQUE</h4>
+                            <div class="stat-item" id="stat-winners">
+                                <span class="label">Total Winners</span>
+                                <span class="value">0 <small class="delta"></small></span>
+                            </div>
+                            <div class="stat-subgrid">
+                                <div class="stat-subitem"><span>Derecha</span> <b id="sub-win-der">0</b></div>
+                                <div class="stat-subitem"><span>Revés</span> <b id="sub-win-rev">0</b></div>
+                            </div>
+                            <div id="winner-types" class="stat-detail"></div>
+                        </div>
+
+                        <div class="stats-column">
+                            <h4>ERRORES</h4>
+                            <div class="stat-item" id="stat-errors">
+                                <span class="label">Total Fallos</span>
+                                <span class="value">0 <small class="delta"></small></span>
+                            </div>
+                            <div id="stat-error-rate" class="stat-item">
+                                <span class="label">Tasa de Error</span>
+                                <span class="value">0%</span>
+                            </div>
+                            <div class="stat-subgrid">
+                                <div class="stat-subitem"><span>Derecha</span> <b id="sub-err-der">0</b></div>
+                                <div class="stat-subitem"><span>Revés</span> <b id="sub-err-rev">0</b></div>
+                            </div>
+                            <div id="error-types" class="stat-detail"></div>
+                        </div>
+
+                        <div class="stats-column">
+                            <h4>MÉTRICAS</h4>
+                            <div class="stat-row-metrics">
+                                <div class="mini-stat">
+                                    <span class="label">1er Saque %</span>
+                                    <span id="stat-first-serve" class="value">0%</span>
+                                </div>
+                                <div class="mini-stat">
+                                    <span class="label">Aces</span>
+                                    <span id="stat-aces" class="value">0</span>
+                                </div>
+                                <div class="mini-stat">
+                                    <span class="label">Dobles Faltas</span>
+                                    <span id="stat-double-faults" class="value">0</span>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="label">Potencia Media</span>
+                                <span id="stat-power-avg" class="value">0G</span>
+                            </div>
+                            <div class="stat-max-power">
+                                <span class="label">PICO MÁXIMO:</span>
+                                <span id="stat-power-max" class="value">--</span>
+                                <p id="stat-power-max-desc">--</p>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <div class="stats-footer">
+                        <div class="match-time">Medio/punto: <span id="stat-time-point">0s</span></div>
+                        <div class="match-time">Medio/juego: <span id="stat-time-game">0s</span></div>
                     </div>
                 </div>
-                <div class="stat-item">
-                    <span class="label">Potencia Media</span>
-                    <span id="stat-power-avg" class="value">0G <small class="delta">(0%)</small></span>
+
+            </div> <!-- fin marcador-layout -->
+        </div>
+
+        <!-- VISTA MODO ENTRENAMIENTO -->
+        <div id="entrenamiento-view"
+            style="display: none; position: fixed; inset: 0; background: var(--bg-dark); z-index: 1500; flex-direction: column; align-items: center; justify-content: center; padding: 40px;">
+            <div class="training-header" style="text-align: center; margin-bottom: 32px;">
+                <h1 class="heading-premium" style="color: var(--volt); margin: 0; font-size: 2.5rem;">ENTRENAMIENTO</h1>
+                <p style="color: var(--text-muted); margin: 8px 0;">Análisis biomecánico en tiempo real</p>
+            </div>
+
+            <div class="canvas-container glass"
+                style="position: relative; width: 100%; max-width: 900px; aspect-ratio: 4/3; overflow: hidden; border-color: var(--accent);">
+                <canvas id="canvas-entrenamiento" style="width: 100%; height: 100%;"></canvas>
+
+                <div id="feedback-badge"
+                    style="position: absolute; top: 24px; right: 24px; padding: 12px 24px; border-radius: 12px; font-weight: 800; display: none; background: var(--accent); color: var(--bg-dark);">
+                    --</div>
+
+                <div id="angle-display" class="glass"
+                    style="position: absolute; bottom: 24px; left: 24px; padding: 16px; border-radius: 16px; min-width: 140px;">
+                    <span
+                        style="font-size: 0.65rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.1em;">Ángulo
+                        Codo</span>
+                    <span id="txt-angulo"
+                        style="font-size: 2rem; color: white; font-weight: 800; font-family: 'Outfit';">--°</span>
                 </div>
-                <div class="stat-max-power">
-                    <span class="label">PICO MÁXIMO:</span>
-                    <span id="stat-power-max" class="value">--</span>
-                    <p id="stat-power-max-desc">--</p>
+            </div>
+
+            <div class="training-tips" style="margin-top: 32px; display: flex; gap: 24px;">
+                <div class="tip-card" id="tip-extension">
+                    <span class="tip-label">EXTENSIÓN</span>
+                    <span class="tip-status">ESPERANDO...</span>
+                </div>
+                <div class="tip-card" id="tip-contacto">
+                    <span class="tip-label">CONTACTO</span>
+                    <span class="tip-status">ESPERANDO...</span>
                 </div>
             </div>
         </div>
 
-        <div class="stats-footer">
-            <div class="match-time">Tiempo medio/punto: <span id="stat-time-point">0s</span></div>
-            <div class="match-time">Tiempo medio/juego: <span id="stat-time-game">0s</span></div>
-        </div>
-    </div>
-
-    <!-- Panel de Métricas del Último Punto -->
-    <div id="panel-metricas" class="panel-metricas" style="margin: 20px;">
-        <h3>ANÁLISIS DE ÚLTIMO PUNTO</h3>
-        <div class="metricas-grid">
-            <div class="metrica">
-                <span class="label">Potencia Media</span>
-                <span id="metric-power" class="valor">--</span>
-            </div>
-            <div class="metrica">
-                <span class="label">Total Golpes</span>
-                <span id="metric-strokes" class="valor">--</span>
-            </div>
-            <div class="metrica">
-                <span class="label">Trayectoria Final</span>
-                <span id="metric-traj" class="valor">--</span>
-            </div>
-            <div class="metrica">
-                <span class="label">Duración</span>
-                <span id="metric-dur" class="valor">--</span>
-            </div>
-            <div class="metrica">
-                <span class="label">Motivo del Punto</span>
-                <span id="metric-reason" class="valor" style="color: var(--gold); font-size: 1.2rem;">--</span>
-            </div>
-        </div>
-
-        <!-- Detalle individual de cada golpe -->
-        <div id="detalle-golpes" style="margin-top: 20px; text-align: left; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-            <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 10px;">DETALLE INDIVIDUAL:</p>
-            <div id="lista-golpes" style="display: flex; flex-wrap: wrap; gap: 10px;">
-                <!-- Aquí se inyectarán los golpes -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Contenedor para el código QR -->
-    <div id="qr-section">
-        <p>Escanea para conectar el móvil:</p>
-        <div id="qrcode"></div>
-    </div>
-
-    <div id="debug-datos"></div>
-    <button id="pingButton">Enviar Ping (Prueba)</button>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script type="module" src="js/main.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script type="module" src="js/main.js"></script>
     </div>
 </body>
 
