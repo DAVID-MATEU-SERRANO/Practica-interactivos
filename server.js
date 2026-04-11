@@ -4,6 +4,9 @@ import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
+import fs from 'fs';
+import 'dotenv/config';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,11 +15,24 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server);
 
+app.use(express.json());
+
 // --- ALMACENAMIENTO DE ESTADÍSTICAS ---
 let matchStats = {
     points: [],
-    games: []
+    games: [],
+    startTime: Date.now()
 };
+
+const STATS_FILE = path.join(process.cwd(), 'match_stats.json');
+
+function saveStats() {
+    try {
+        fs.writeFileSync(STATS_FILE, JSON.stringify(matchStats, null, 2));
+    } catch (err) {
+        console.error("Error guardando estadísticas:", err);
+    }
+}
 
 // Obtener la IP local para el QR
 app.get('/ip', (req, res) => {
@@ -33,8 +49,25 @@ app.get('/ip', (req, res) => {
     res.json({ ip: localIp });
 });
 
+// Endpoint para recuperar las estadísticas guardadas
+app.get('/match-stats', (req, res) => {
+    try {
+        if (fs.existsSync(STATS_FILE)) {
+            const data = fs.readFileSync(STATS_FILE, 'utf8');
+            res.json(JSON.parse(data));
+        } else {
+            res.json(matchStats); // Estructura vacía inicial
+        }
+    } catch (err) {
+        console.error("Error leyendo estadísticas:", err);
+        res.status(500).json({ error: "No se pudieron recuperar las estadísticas" });
+    }
+});
+
 // Servir archivos estáticos desde la carpeta 'public' 
 app.use(express.static(path.join(__dirname, 'public')));
+
+
 
 io.on('connection', (socket) => {
     console.log('Dispositivo conectado: ' + socket.id);
@@ -68,22 +101,25 @@ io.on('connection', (socket) => {
         }
 
         console.log(`\n🎾 PUNTO PARA: ${quien.toUpperCase()}`);
+        console.log(`   - Motivo: ${metrics.motivo || 'No especificado'}`);
         if (metrics.strokes) {
             console.log(`   - Golpes totales: ${metrics.strokes.length}`);
             metrics.strokes.forEach((s, i) => {
-                console.log(`   - Golpe ${i+1}: ${s.power}G | ${s.trajectory} | Dir: ${s.yaw}°`);
+                console.log(`   - Golpe ${i + 1}: ${s.power}G | ${s.trajectory}`);
             });
         }
         console.log(`   - Duración: ${metrics.duracion_punto}\n`);
-        
+
         // Guardar el punto en las estadísticas
         matchStats.points.push({
             winner: quien,
             timestamp: Date.now(),
             ...metrics
         });
+        saveStats();
 
-        io.emit('punto-registrado', quien);
+        // Notificar a todos los dispositivos (especialmente al Dashboard) con el payload completo
+        io.emit('punto-registrado', payload);
     });
 
     // Evento para registrar el fin de un juego
@@ -93,6 +129,13 @@ io.on('connection', (socket) => {
             timestamp: Date.now(),
             ...gameData
         });
+        saveStats();
+    });
+
+    // Evento para sincronizar el saque cuando cambia el juego/marcador
+    socket.on('notificar-saque', (quien) => {
+        console.log('Cambio de saque notificado por el marcador: ' + quien);
+        io.emit('saque-actualizado', quien);
     });
 
     // Evento para definir el saque inicial desde el móvil

@@ -1,0 +1,499 @@
+{
+  "points": [
+    {
+      "winner": "rival",
+      "timestamp": 1775910512816,
+      "strokes": [
+        {
+          "power": "7.2",
+          "trajectory": "1er SAQUE",
+          "side": "DERECHA"
+        },
+        {
+          "power": "13.3",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "4.1s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910520116,
+      "strokes": [
+        {
+          "power": "14.8",
+          "trajectory": "1er SAQUE",
+          "side": "DERECHA"
+        },
+        {
+          "power": "12.0",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "4.0s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910525307,
+      "strokes": [
+        {
+          "power": "14.0",
+          "trajectory": "1er SAQUE",
+          "side": "REVÉS"
+        },
+        {
+          "power": "12.3",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "3.7s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910530632,
+      "strokes": [
+        {
+          "power": "12.9",
+          "trajectory": "1er SAQUE",
+          "side": "DERECHA"
+        },
+        {
+          "power": "6.9",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "3.7s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "yo",
+      "timestamp": 1775910538210,
+      "strokes": [
+        {
+          "power": "8.1",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "2.4s",
+      "motivo": "Fallo Rival"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910542715,
+      "strokes": [
+        {
+          "power": "8.6",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "2.8s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910548657,
+      "strokes": [
+        {
+          "power": "15.0",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "2.5s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910554286,
+      "strokes": [
+        {
+          "power": "24.3",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "2.5s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "yo",
+      "timestamp": 1775910558376,
+      "strokes": [
+        {
+          "power": "10.9",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "2.3s",
+      "motivo": "Fallo Rival"
+    },
+    {
+      "winner": "yo",
+      "timestamp": 1775910562376,
+      "strokes": [
+        {
+          "power": "11.0",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "2.4s",
+      "motivo": "Fallo Rival"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910566984,
+      "strokes": [
+        {
+          "power": "7.8",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "2.9s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910573401,
+      "strokes": [
+        {
+          "power": "8.0",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "3.1s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910580690,
+      "strokes": [
+        {
+          "power": "6.7",
+          "trajectory": "1er SAQUE",
+          "side": "DERECHA"
+        },
+        {
+          "power": "16.0",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "5.0s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910589410,
+      "strokes": [
+        {
+          "power": "12.1",
+          "trajectory": "1er SAQUE",
+          "side": "DERECHA"
+        },
+        {
+          "power": "14.6",
+          "trajectory": "2º SAQUE",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "7.3s",
+      "motivo": "Winner"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910595963,
+      "strokes": [
+        {
+          "power": "9.8",
+          "trajectory": "1er SAQUE",
+          "side": "DERECHA"
+        },
+        {
+          "power": "9.9",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "4.8s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "yo",
+      "timestamp": 1775910603131,
+      "strokes": [
+        {
+          "power": "9.5",
+          "trajectory": "1er SAQUE",
+          "side": "DERECHA"
+        },
+        {
+          "power": "10.1",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "5.5s",
+      "motivo": "Fallo Rival"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910608558,
+      "strokes": [
+        {
+          "power": "11.2",
+          "trajectory": "1er SAQUE",
+          "side": "DERECHA"
+        },
+        {
+          "power": "9.2",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "3.8s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910616751,
+      "strokes": [
+        {
+          "power": "7.2",
+          "trajectory": "Slice (Cortado)",
+          "side": "DERECHA"
+        },
+        {
+          "power": "12.1",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "5.0s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910625147,
+      "strokes": [
+        {
+          "power": "6.8",
+          "trajectory": "Plano",
+          "side": "DERECHA"
+        },
+        {
+          "power": "10.6",
+          "trajectory": "Plano",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "3.7s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910629841,
+      "strokes": [
+        {
+          "power": "18.0",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "2.7s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910634856,
+      "strokes": [
+        {
+          "power": "8.3",
+          "trajectory": "Plano",
+          "side": "DERECHA"
+        },
+        {
+          "power": "14.1",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "3.4s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910662421,
+      "strokes": [
+        {
+          "power": "17.4",
+          "trajectory": "1er SAQUE",
+          "side": "DERECHA"
+        },
+        {
+          "power": "24.6",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "4.5s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910671272,
+      "strokes": [
+        {
+          "power": "9.2",
+          "trajectory": "1er SAQUE",
+          "side": "DERECHA"
+        },
+        {
+          "power": "8.3",
+          "trajectory": "2º SAQUE",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "7.3s",
+      "motivo": "Doble Falta"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910676779,
+      "strokes": [
+        {
+          "power": "14.3",
+          "trajectory": "1er SAQUE",
+          "side": "REVÉS"
+        },
+        {
+          "power": "14.6",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "3.9s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910682371,
+      "strokes": [
+        {
+          "power": "9.7",
+          "trajectory": "1er SAQUE",
+          "side": "DERECHA"
+        },
+        {
+          "power": "10.6",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "3.7s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910688024,
+      "strokes": [
+        {
+          "power": "7.5",
+          "trajectory": "Plano",
+          "side": "DERECHA"
+        },
+        {
+          "power": "10.1",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "3.7s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910692834,
+      "strokes": [
+        {
+          "power": "12.9",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "2.3s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910696930,
+      "strokes": [
+        {
+          "power": "7.8",
+          "trajectory": "Slice (Cortado)",
+          "side": "REVÉS"
+        }
+      ],
+      "duracion_punto": "2.5s",
+      "motivo": "Fallo Mío"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1775910700827,
+      "strokes": [],
+      "duracion_punto": "6.4s",
+      "motivo": "Fallo Mío"
+    }
+  ],
+  "games": [
+    {
+      "timestamp": 1775910530640,
+      "ganador": "rival",
+      "marcador": "0-1",
+      "duracion": 38
+    },
+    {
+      "timestamp": 1775910573404,
+      "ganador": "rival",
+      "marcador": "0-2",
+      "duracion": 42
+    },
+    {
+      "timestamp": 1775910608562,
+      "ganador": "rival",
+      "marcador": "0-3",
+      "duracion": 35
+    },
+    {
+      "timestamp": 1775910634858,
+      "ganador": "rival",
+      "marcador": "0-4",
+      "duracion": 26
+    },
+    {
+      "timestamp": 1775910682374,
+      "ganador": "rival",
+      "marcador": "0-5",
+      "duracion": 47
+    },
+    {
+      "timestamp": 1775910700830,
+      "ganador": "rival",
+      "marcador": "0-6",
+      "duracion": 18
+    }
+  ],
+  "startTime": 1775910491840
+}

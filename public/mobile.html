@@ -40,15 +40,23 @@
         <!-- Controles de Modo Partido (Gestos) -->
         <div id="controles-partido" style="display: none; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 20px; text-align: center;">
             <div id="guia-gestos" class="glass" style="padding: 20px; border-radius: 15px; margin-top:10px;">
-                <p style="font-size: 0.9rem; color: #aaa;">GESTOS DE PUNTUACIÓN (HACIA ABAJO):</p>
-                <div style="display: flex; justify-content: space-around; margin-top: 10px;">
-                    <div>
-                        <h2 style="color: var(--success-color); margin:0;">↓↓</h2>
-                        <p style="font-size: 0.8rem;">PK YO (2 tirones)</p>
+                <p style="font-size: 0.9rem; color: #aaa;">GESTOS DE PUNTUACIÓN (ROTACIÓN):</p>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; font-size: 0.8rem; text-align: left;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--success-color);">1 Giro ↺ (Antihorario)</span>
+                        <span>PK YO (Winner)</span>
                     </div>
-                    <div>
-                        <h2 style="color: var(--error-color); margin:0;">↓↓↓</h2>
-                        <p style="font-size: 0.8rem;">PK RIVAL (3 tirones)</p>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--success-color);">1 Giro ↻ (Horario)</span>
+                        <span>PK YO (Fallo Rival)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--error-color);">2 Giros ↺ (Antihorario)</span>
+                        <span>PK RIVAL (Winner)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--error-color);">2 Giros ↻ (Horario)</span>
+                        <span>PK RIVAL (Fallo Mío)</span>
                     </div>
                 </div>
                 <p id="feedback-gesto" style="margin-top: 15px; font-weight: bold; min-height: 1.2em;"></p>

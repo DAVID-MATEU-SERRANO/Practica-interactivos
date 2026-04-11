@@ -1,3 +1,5 @@
+// Eliminado Transformers.js local para usar DeepSeek en el servidor
+
 const socket = io();
 const modoTexto = document.getElementById('modo-texto');
 
@@ -21,6 +23,7 @@ const uiMetrics = {
     strokes: document.getElementById('metric-strokes'),
     trajectory: document.getElementById('metric-traj'),
     duration: document.getElementById('metric-dur'),
+    reason: document.getElementById('metric-reason'),
     listaGolpes: document.getElementById('lista-golpes')
 };
 
@@ -42,8 +45,17 @@ let partido = {
     isMatchFinished: false,
     quienSaca: null,
     servidorInicialSet: null,
-    estaSilenciado: false
+    estaSilenciado: false,
+    matchHistory: [], // Registro de todos los puntos
+    ultimoIndiceDescanso: 0, // Para calcular deltas
+    inicioUltimoJuego: Date.now(), // Tracking de duración de juego
+    gameHistory: [] // Registro de duraciones de juegos
 };
+
+// Referencias Stats Overlay
+const statsOverlay = document.getElementById('stats-overlay');
+const btnCloseStats = document.getElementById('close-stats');
+if (btnCloseStats) btnCloseStats.onclick = () => statsOverlay.classList.remove('visible');
 
 const labelsPuntos = ["0", "15", "30", "40", "AD"];
 
@@ -83,7 +95,28 @@ if (btnIniciar) {
             .catch(err => console.error("Error obteniendo IP:", err));
 
         hablar("Bienvenido");
+        recuperarEstadisticas();
     });
+}
+
+async function recuperarEstadisticas() {
+    try {
+        console.log("Intentando recuperar estadísticas del servidor...");
+        const response = await fetch('/match-stats');
+        const data = await response.json();
+        
+        if (data && data.points) {
+            partido.matchHistory = data.points;
+            console.log(`Recuperados ${data.points.length} puntos.`);
+        }
+        if (data && data.games) {
+            partido.gameHistory = data.games;
+            console.log(`Recuperados ${data.games.length} juegos.`);
+        }
+        actualizarMarcadorUI();
+    } catch (err) {
+        console.error("Error recuperando estadísticas:", err);
+    }
 }
 
 // --- LÓGICA DE SAQUE RECIBIDA DEL MÓVIL ---
@@ -96,6 +129,8 @@ socket.on('saque-definido', (quien) => {
 
 function cambiarServidorJuego() {
     partido.quienSaca = 1 - partido.quienSaca;
+    const quien = (partido.quienSaca === 0) ? 'yo' : 'rival';
+    socket.emit('notificar-saque', quien);
 }
 
 function verificarServidorTieBreak() {
@@ -103,6 +138,8 @@ function verificarServidorTieBreak() {
     const baseServer = partido.servidorInicialSet;
     const currentServer = (Math.floor((totalPuntos + 1) / 2) % 2 === 0) ? baseServer : 1 - baseServer;
     partido.quienSaca = currentServer;
+    const quien = (partido.quienSaca === 0) ? 'yo' : 'rival';
+    socket.emit('notificar-saque', quien);
 }
 
 // --- LÓGICA DE PUNTUACIÓN ---
@@ -137,6 +174,7 @@ socket.on('punto-registrado', (payload) => {
         uiMetrics.strokes.innerText = totalStrokes;
         uiMetrics.trajectory.innerText = lastTraj;
         uiMetrics.duration.innerText = metrics.duracion_punto;
+        uiMetrics.reason.innerText = metrics.motivo || "--";
 
         // Mostrar detalles individuales
         uiMetrics.listaGolpes.innerHTML = "";
@@ -154,6 +192,14 @@ socket.on('punto-registrado', (payload) => {
     } else {
         anotarPuntoEstandar(winnerIdx, loserIdx);
     }
+
+    // Guardar en el historial
+    partido.matchHistory.push({
+        ganador: quien,
+        marcadorPost: `${partido.games[0]}-${partido.games[1]} (${partido.puntos[0]}-${partido.puntos[1]})`,
+        metrics: metrics,
+        setIndex: partido.currentSetIndex
+    });
 
     actualizarMarcadorUI();
     verificarCambioPista();
@@ -215,11 +261,20 @@ function ganarJuego(w) {
     partido.puntos = [0, 0];
     partido.setScores[partido.currentSetIndex] = [...partido.games];
 
+    // Calcular duración del juego
+    const duracionJuego = Math.floor((Date.now() - partido.inicioUltimoJuego) / 1000); // en segundos
+    partido.inicioUltimoJuego = Date.now(); // Reset para el siguiente juego
+
     // Notificar al móvil que el juego ha terminado para que guarde estadísticas
-    socket.emit('registrar-fin-juego', {
+    const payload = {
         ganador: w === 0 ? 'yo' : 'rival',
-        marcador: `${partido.games[0]}-${partido.games[1]}`
-    });
+        marcador: `${partido.games[0]}-${partido.games[1]}`,
+        duracion: duracionJuego
+    };
+    socket.emit('registrar-fin-juego', payload);
+
+    // Guardar localmente para cálculos de media
+    partido.gameHistory.push(payload);
 
     if (!partido.isTieBreak) cambiarServidorJuego();
 
@@ -267,10 +322,12 @@ function ganarSet(w) {
 
     if (partido.sets[w] === 2) {
         partido.isMatchFinished = true;
+        mostrarEstadisticas("Fin del Partido");
         setTimeout(() => {
             hablar(`Partido ${w === 0 ? "usted" : "rival"}.`);
         }, 1000);
     } else {
+        mostrarEstadisticas("Fin del Set " + (partido.currentSetIndex + 1));
         partido.currentSetIndex++;
         partido.games = [0, 0];
         partido.isTieBreak = false;
@@ -302,7 +359,213 @@ function actualizarMarcadorUI() {
 
 function verificarCambioPista() {
     const sumaJuegos = partido.games[0] + partido.games[1];
-    avisoPista.style.display = (sumaJuegos % 2 !== 0) ? 'block' : 'none';
+    const esCambio = (sumaJuegos % 2 !== 0);
+    avisoPista.style.display = esCambio ? 'block' : 'none';
+
+    // Si es cambio de pista y el juego acaba de terminar (puntos a 0)
+    if (esCambio && partido.puntos[0] === 0 && partido.puntos[1] === 0) {
+        mostrarEstadisticas("Descanso de Pista");
+    }
+}
+
+// --- MOTOR DE ESTADÍSTICAS ---
+
+function calcularEstadisticas(rangoPuntos) {
+    let stats = {
+        winners: { total: 0, der: 0, rev: 0, tipos: {} },
+        errors: { total: 0, der: 0, rev: 0, tipos: {} },
+        serves: { firstIn: 0, firstTotal: 0, aces: 0, doubleFaults: 0 },
+        power: { sum: 0, count: 0, max: 0, maxDetail: "" },
+        time: { pointSum: 0, pointCount: 0 }
+    };
+
+    rangoPuntos.forEach(p => {
+        const m = p.metrics;
+        if (!m) return;
+
+        // Tiempos
+        const dur = parseFloat(m.duracion_punto);
+        if (!isNaN(dur)) {
+            stats.time.pointSum += dur;
+            stats.time.pointCount++;
+        }
+
+        // Saque
+        if (p.ganador === 'yo') {
+            if (m.motivo === 'Winner' && m.strokes.length === 1 && m.strokes[0].trajectory.includes('SAQUE')) {
+                stats.serves.aces++;
+            }
+        }
+        if (p.ganador === 'rival' && m.motivo === 'Doble Falta') {
+            stats.serves.doubleFaults++;
+        }
+        
+        // Primeros saques dentro (Aproximación: si no hubo Segundo Saque gestual)
+        // Nota: En un sistema real trackearíamos cada intento de saque.
+        // Aquí asumimos que si se anotó punto sin marcar 'media', el 1er saque entró.
+        const huboSegundo = m.strokes.some(s => s.trajectory === '2º SAQUE');
+        if (!huboSegundo) {
+            stats.serves.firstIn++;
+        }
+        stats.serves.firstTotal++;
+
+        // Potencia y Golpes
+        m.strokes.forEach(s => {
+            const pwr = parseFloat(s.power);
+            stats.power.sum += pwr;
+            stats.power.count++;
+            if (pwr > stats.power.max) {
+                stats.power.max = pwr;
+                stats.power.maxDetail = `${s.side} ${s.trajectory}`;
+            }
+        });
+
+        // Clasificación Winners / Errores (Solo para 'Yo')
+        if (m.motivo === 'Winner' && p.ganador === 'yo') {
+            stats.winners.total++;
+            const last = m.strokes[m.strokes.length - 1];
+            if (last) {
+                if (last.side === 'DERECHA') stats.winners.der++;
+                else stats.winners.rev++;
+                const key = `${last.side} ${last.trajectory}`;
+                stats.winners.tipos[key] = (stats.winners.tipos[key] || 0) + 1;
+            }
+        } else if (m.motivo === 'Fallo Mío' && p.ganador === 'rival') {
+            stats.errors.total++;
+            const last = m.strokes[m.strokes.length - 1];
+            if (last) {
+                if (last.side === 'DERECHA') stats.errors.der++;
+                else stats.errors.rev++;
+                const key = `${last.side} ${last.trajectory}`;
+                stats.errors.tipos[key] = (stats.errors.tipos[key] || 0) + 1;
+            }
+        }
+    });
+
+    return stats;
+}
+
+function mostrarEstadisticas(titulo) {
+    const globalHistory = partido.matchHistory;
+    let currentPoints = [];
+    let baselinePoints = null;
+    let isSetSummary = titulo.startsWith("Fin del Set");
+    let setIndexComp = -1;
+
+    if (isSetSummary) {
+        // Extraer número de set (e.g., "Fin del Set 1" -> index 0)
+        const match = titulo.match(/Fin del Set (\d+)/);
+        if (match) {
+            setIndexComp = parseInt(match[1]) - 1;
+            currentPoints = globalHistory.filter(p => p.setIndex === setIndexComp);
+            // Si es Set 2 o 3, comparamos con los sets anteriores
+            if (setIndexComp > 0) {
+                baselinePoints = globalHistory.filter(p => p.setIndex < setIndexComp);
+            }
+        }
+    } else {
+        // Descanso de Pista: último tramo vs todo el partido
+        currentPoints = globalHistory.slice(partido.ultimoIndiceDescanso);
+        baselinePoints = globalHistory;
+        partido.ultimoIndiceDescanso = globalHistory.length;
+    }
+    
+    const statsCurrent = calcularEstadisticas(currentPoints);
+    const statsBaseline = baselinePoints ? calcularEstadisticas(baselinePoints) : null;
+    
+    document.getElementById('stats-moment').innerText = titulo;
+
+    // --- Helper para Deltas ---
+    const getDelta = (curr, baseline) => {
+        if (!baseline || baseline === 0 || isNaN(baseline) || !isFinite(baseline)) return 0;
+        const c = parseFloat(curr) || 0;
+        const b = parseFloat(baseline);
+        return ((c - b) / b * 100).toFixed(0);
+    };
+
+    const updateValueWithDelta = (id, curr, globValue, inverse = false) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        
+        let deltaText = "";
+        let colorClass = "";
+
+        if (statsBaseline) {
+            // Normalizar el valor del baseline al volumen de puntos actual para que la comparación sea justa
+            const normalizationFactor = (baselinePoints.length / (currentPoints.length || 1)) || 1;
+            const normalizedBaseline = globValue / normalizationFactor;
+            
+            const delta = getDelta(curr, normalizedBaseline);
+            colorClass = delta >= 0 ? 'positive' : 'negative';
+            if (inverse) colorClass = delta <= 0 ? 'positive' : 'negative'; 
+            deltaText = `(${delta >= 0 ? '+' : ''}${delta}%)`;
+        }
+        
+        el.querySelector('.value').innerHTML = `${curr} <small class="delta ${colorClass}">${deltaText}</small>`;
+    };
+
+    console.log(`Trigger: ${titulo}. Puntos actuales: ${currentPoints.length}. Baseline: ${baselinePoints ? baselinePoints.length : 'N/A'}`);
+
+    // Winners e Inferiores
+    updateValueWithDelta('stat-winners', statsCurrent.winners.total, statsBaseline ? statsBaseline.winners.total : 0); 
+    document.getElementById('sub-win-der').innerText = statsCurrent.winners.der;
+    document.getElementById('sub-win-rev').innerText = statsCurrent.winners.rev;
+    
+    // Errores
+    updateValueWithDelta('stat-errors', statsCurrent.errors.total, statsBaseline ? statsBaseline.errors.total : 0, true);
+    
+    // Tasa de Error (% de golpes que son fallos propios)
+    const errorRate = statsCurrent.power.count > 0 ? (statsCurrent.errors.total / statsCurrent.power.count * 100).toFixed(1) : 0;
+    document.getElementById('stat-error-rate').querySelector('.value').innerText = errorRate + "%";
+
+    document.getElementById('sub-err-der').innerText = statsCurrent.errors.der;
+    document.getElementById('sub-err-rev').innerText = statsCurrent.errors.rev;
+
+    // Saque
+    const firstServePct = statsCurrent.serves.firstTotal > 0 ? (statsCurrent.serves.firstIn / statsCurrent.serves.firstTotal * 100).toFixed(0) : 0;
+    document.getElementById('stat-first-serve').innerText = firstServePct + "%";
+    document.getElementById('stat-aces').innerText = statsCurrent.serves.aces;
+    document.getElementById('stat-double-faults').innerText = statsCurrent.serves.doubleFaults;
+
+    // Potencia
+    const avgPwr = statsCurrent.power.count > 0 ? (statsCurrent.power.sum / statsCurrent.power.count).toFixed(1) : 0;
+    
+    let pwrDeltaText = "";
+    let pwrClass = "";
+    if (statsBaseline && statsBaseline.power.count > 0) {
+        const globAvgPwr = statsBaseline.power.sum / statsBaseline.power.count;
+        const pwrDelta = getDelta(avgPwr, globAvgPwr);
+        pwrClass = pwrDelta >= 0 ? 'positive' : 'negative';
+        pwrDeltaText = `(${pwrDelta >= 0 ? '+':''}${pwrDelta}%)`;
+    }
+    
+    document.getElementById('stat-power-avg').innerHTML = `${avgPwr}G <small class="delta ${pwrClass}">${pwrDeltaText}</small>`;
+    
+    document.getElementById('stat-power-max').innerText = statsCurrent.power.max + "G";
+    document.getElementById('stat-power-max-desc').innerText = statsCurrent.power.maxDetail || "--";
+
+    // Tiempos
+    const avgTime = statsCurrent.time.pointCount > 0 ? (statsCurrent.time.pointSum / statsCurrent.time.pointCount).toFixed(1) : 0;
+    document.getElementById('stat-time-point').innerText = avgTime + "s";
+    
+    // Tiempo medio por juego
+    const playedGames = partido.gameHistory;
+    if (playedGames.length > 0) {
+        const avgGameTime = (playedGames.reduce((acc, g) => acc + g.duracion, 0) / playedGames.length).toFixed(0);
+        document.getElementById('stat-time-game').innerText = avgGameTime + "s";
+    }
+
+    // Detalle de tipos
+    const formatTipos = (tipos) => {
+        return Object.entries(tipos)
+            .map(([tipo, count]) => `<div>${tipo}: <b>${count}</b></div>`)
+            .join('');
+    };
+    document.getElementById('winner-types').innerHTML = formatTipos(statsCurrent.winners.tipos);
+    document.getElementById('error-types').innerHTML = formatTipos(statsCurrent.errors.tipos);
+    
+    // Mostrar Overlay
+    statsOverlay.classList.add('visible');
 }
 
 // --- SINCRONIZACIÓN DE MODOS ---

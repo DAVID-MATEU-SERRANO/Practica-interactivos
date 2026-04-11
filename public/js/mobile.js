@@ -22,6 +22,7 @@ const HISTORIAL_MAX_SIZE = 30; // ~500ms a 60Hz para asegurar ventana antes/desp
 let saqueDefinido = false;
 let quienSaca = ''; // Rastrear quién saca el juego actual
 let modoActual = '';
+let esSegundoSaque = false;
 let lastStrikeTime = 0;
 let golpeCount = 0;
 let confirmTimer = null;
@@ -34,14 +35,12 @@ let pointStartTime = Date.now();
 let gameStartTime = Date.now();
 let lastStrokeMetrics = {
     power: 0,
-    trajectory: 'Plano',
-    yaw: 0
+    trajectory: 'Plano'
 };
 let currentPointStrokes = [];
 
 // Sensores adicionales
 let gyroSensor = null;
-let orientationSensor = null;
 
 // --- FILTROS Y PROCESAMIENTO ---
 const buffers = {
@@ -58,30 +57,18 @@ function movingAverage(buffer, newVal) {
 let currentMA = { ax: 0, ay: 0, az: 0, rx: 0, ry: 0 };
 let rawMag = { ax: 0, ay: 0, az: 0 }; // Sin filtrar, para capturar pico real
 let peakPower = 0;
-let peakGyroAtImpact = 0;
 let capturingPeak = false;
 
 // Estado para giros de puntuación
 let rotationCount = 0;
+let rotationSigns = [];
 let lastRotationPeakTime = 0;
 let rotationTimer = null;
 
 // Historial circular para análisis de impacto
 let sensorHistory = [];
-let initialPitch = 0;
 let peakTime = 0;
 
-function quaternionToEuler(q) {
-    const [x, y, z, w] = q;
-    const pitch = Math.atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y));
-    const roll = Math.asin(2 * (w * y - z * x));
-    const yaw = Math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z));
-    return {
-        roll: roll * (180 / Math.PI),
-        pitch: pitch * (180 / Math.PI),
-        yaw: yaw * (180 / Math.PI)
-    };
-}
 
 // --- INICIO DEL SISTEMA (Interacción Obligatoria) ---
 if (btnIniciar) {
@@ -118,6 +105,7 @@ socket.on('modo-actualizado', (modo) => {
         seccionSaque.style.display = 'none';
         controlesPartido.style.display = 'none';
         saqueDefinido = false;
+        esSegundoSaque = false; // Resetear explícitamente al salir de modo partido
     }
 });
 
@@ -126,19 +114,21 @@ socket.on('saque-definido', (quien) => {
     quienSaca = quien;
     if (seccionSaque) seccionSaque.style.display = 'none';
     if (controlesPartido) controlesPartido.style.display = 'block';
-    // Calibración de Yaw: Punto Cero
-    if (orientationSensor && orientationSensor.quaternion) {
-        const euler = quaternionToEuler(orientationSensor.quaternion);
-        yawReference = euler.yaw;
-    }
     gameStartTime = Date.now();
     isPointRunning = false;
     currentPointStrokes = [];
+    esSegundoSaque = false;
 });
 
 socket.on('punto-registrado', () => {
     isPointRunning = false;
     currentPointStrokes = [];
+    esSegundoSaque = false;
+});
+
+socket.on('saque-actualizado', (quien) => {
+    quienSaca = quien;
+    console.log("Saque actualizado automáticamente a: " + quien);
 });
 
 socket.on('registrar-fin-juego', (data) => {
@@ -190,13 +180,7 @@ function activarSensores() {
                         capturingPeak = true;
                         peakPower = currentPowerG;
                         peakTime = now;
-                        peakGyroAtImpact = currentMA.ry;
 
-                        // Capturar pitch inicial para el Delta
-                        if (orientationSensor && orientationSensor.quaternion) {
-                            const euler = quaternionToEuler(orientationSensor.quaternion);
-                            initialPitch = euler.pitch;
-                        }
 
                             setTimeout(() => {
                                 // Solo registrar si el pico superó un umbral mínimo de impacto real
@@ -214,18 +198,9 @@ function activarSensores() {
                     if (rawPowerG > peakPower) {
                         peakPower = rawPowerG;
                         peakTime = now;
-                        peakGyroAtImpact = currentMA.ry;
                     }
                 }
 
-                // Guardar en el historial circular
-                let currentPitch = 0;
-                let currentRoll = 0;
-                if (orientationSensor && orientationSensor.quaternion) {
-                    const euler = quaternionToEuler(orientationSensor.quaternion);
-                    currentPitch = euler.pitch;
-                    currentRoll = euler.roll;
-                }
 
                 sensorHistory.push({
                     t: now,
@@ -234,9 +209,7 @@ function activarSensores() {
                     ay: currentMA.ay,
                     az: currentMA.az,
                     rx: currentMA.rx,
-                    ry: currentMA.ry,
-                    pitch: currentPitch,
-                    roll: currentRoll
+                    ry: currentMA.ry
                 });
                 if (sensorHistory.length > HISTORIAL_MAX_SIZE) sensorHistory.shift();
             };
@@ -261,34 +234,38 @@ function activarSensores() {
             if (Math.abs(currentMA.ry) > UMBRAL_ROTACION_PUNTO && magnitude < MAX_ACCEL_GESTO) {
                 if (now - lastRotationPeakTime > 400) { // Cooldown entre picos del mismo giro
                     lastRotationPeakTime = now;
-                    gestionarGiroPuntuacion();
+                    gestionarGiroPuntuacion(currentMA.ry);
                 }
             }
         };
         gyroSensor.start();
     }
 
-    // 3. Orientación (Dirección)
-    if ('AbsoluteOrientationSensor' in window) {
-        orientationSensor = new AbsoluteOrientationSensor({ frequency: 60 });
-        orientationSensor.start();
-    }
 }
 
-function gestionarGiroPuntuacion() {
+function gestionarGiroPuntuacion(val) {
     rotationCount++;
+    rotationSigns.push(val);
     if (navigator.vibrate) navigator.vibrate(40);
 
     feedbackGesto.innerHTML = `<span style="color:cyan">GIRO ${rotationCount} DETECTADO</span>`;
 
     if (rotationTimer) clearTimeout(rotationTimer);
     rotationTimer = setTimeout(() => {
+        // Calcular dirección predominante (promedio de los signos detectados)
+        const avgSign = rotationSigns.reduce((a, b) => a + b, 0) / rotationSigns.length;
+        const esAntihorario = avgSign > 0;
+        let motivo = "";
+
         if (rotationCount === 1) {
-            ejecutarPuntoGesto('yo');
+            motivo = esAntihorario ? "Winner" : "Fallo Rival";
+            ejecutarPuntoGesto('yo', motivo);
         } else if (rotationCount >= 2) {
-            ejecutarPuntoGesto('rival');
+            motivo = esAntihorario ? "Winner" : "Fallo Mío";
+            ejecutarPuntoGesto('rival', motivo);
         }
         rotationCount = 0;
+        rotationSigns = [];
         feedbackGesto.innerText = "";
     }, VENTANA_ROTACION);
 }
@@ -348,15 +325,6 @@ function capturarMetricas() {
         return false;
     }
 
-    // 3. Dirección (Yaw) - Cálculo temprano para detección de lado
-    let yawRelativo = 0;
-    if (orientationSensor && orientationSensor.quaternion) {
-        const euler = quaternionToEuler(orientationSensor.quaternion);
-        yawRelativo = euler.yaw - yawReference;
-        // Normalizar a [-180, 180]
-        if (yawRelativo > 180) yawRelativo -= 360;
-        if (yawRelativo < -180) yawRelativo += 360;
-    }
 
     // 2. LÓGICA DE DECISIÓN (Detección Física por Impacto en Eje Z)
     // DERECHA (impacto pantalla) -> Z positivo potente. REVÉS (impacto trasera o flick suave) -> Z bajo o negativo.
@@ -367,12 +335,24 @@ function capturarMetricas() {
     const scoreLiftado = (-maxGyroRX * 0.7) + (maxGyroRY * 1.3);
 
     // --- DETECCIÓN DE SAQUE ---
-    // Si es el primer golpe del punto y quien saca es "yo", lo marcamos como SAQUE
-    const esPrimerGolpe = currentPointStrokes.length === 0;
-    if (esPrimerGolpe && quienSaca === 'yo') {
-        trajectory = 'SAQUE';
+    // Solo aplicamos lógica de saque si el sistema indica que sacas "tú"
+    if (quienSaca === 'yo') {
+        if (!esSegundoSaque && currentPointStrokes.length === 0) {
+            trajectory = '1er SAQUE';
+        } else if (esSegundoSaque) {
+            // Solo clasificamos como 2º saque el primer golpe que se de tras marcar la media
+            const yaDioSegundoSaque = currentPointStrokes.some(s => s.trajectory === '2º SAQUE');
+            if (!yaDioSegundoSaque) {
+                trajectory = '2º SAQUE';
+            }
+        }
     } else {
-        // LÓGICA DE TRAYECTORIA (Solo si no es saque)
+        // Si saca el rival, nos aseguramos de que ningún golpe sea etiquetado como saque propio
+        // (Por defecto trajectory es 'Plano' y entrará en la lógica de golpes normales)
+    }
+
+    if (trajectory === 'Plano') { // Si no se ha definido como saque aún...
+        // LÓGICA DE TRAYECTORIA (Golpes normales)
         if (esReves) {
             // Backhand (REVÉS)
             if (azAtImpact < -12.0 || maxGyroRX < -4.5) {
@@ -406,7 +386,7 @@ function capturarMetricas() {
     lastStrokeMetrics = {
         power: powerScaled,
         trajectory: trajectory,
-        yaw: yawRelativo.toFixed(1)
+        side: ladoStr
     };
 
     return true; // Golpe válido
@@ -444,17 +424,49 @@ function mostrarFeedback(titulo, metrics) {
     setTimeout(() => { document.body.classList.remove(flashClass); }, 300);
 }
 
-function ejecutarPuntoGesto(destino) {
+function ejecutarPuntoGesto(destino, motivo) {
+    // --- LÓGICA DE MEDIA / SEGUNDO SAQUE ---
+    // Si el usuario falla su propio saque y es el primero (y no ha habido peloteo)
+    const noHayGolpesDeRally = currentPointStrokes.every(s => s.trajectory.includes('SAQUE'));
+    if (destino === 'rival' && motivo === 'Fallo Mío' && !esSegundoSaque && quienSaca === 'yo' && noHayGolpesDeRally) {
+        esSegundoSaque = true;
+        lockGestos = true;
+        feedbackGesto.innerHTML = `<span style="color:var(--gold)">⚠️ MEDIA / 2º SAQUE</span>`;
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        socket.emit('debug-logs', "Estado: 2º SAQUE activado por gesto");
+        
+        // NO limpiamos golpes, queremos que se acumulen (1er saque + 2º saque + ...)
+        
+        setTimeout(() => { 
+            feedbackGesto.innerText = ""; 
+            lockGestos = false; 
+        }, 1500);
+        return; // Interrumpimos: no se anota punto
+    }
+
+    // Si ya era segundo saque y vuelve a fallar, es Doble Falta
+    if (esSegundoSaque && destino === 'rival' && motivo === 'Fallo Mío') {
+        // Se considera doble falta si la secuencia de golpes es solo de saques (o vacía)
+        const soloSaques = currentPointStrokes.every(s => s.trajectory.includes('SAQUE'));
+        if (soloSaques) {
+            motivo = "Doble Falta";
+        }
+    }
+
+    // Resetear estado de saque para el siguiente punto
+    esSegundoSaque = false;
+
     lockGestos = true;
     const pointDuration = (Date.now() - pointStartTime) / 1000;
 
-    feedbackGesto.innerHTML = `✅ PUNTO PARA: ${destino.toUpperCase()}`;
+    feedbackGesto.innerHTML = `✅ PUNTO PARA: ${destino.toUpperCase()}<br><small>${motivo}</small>`;
 
     socket.emit('anotar-punto', {
         quien: destino,
         metrics: {
             strokes: currentPointStrokes,
-            duracion_punto: pointDuration.toFixed(1) + "s"
+            duracion_punto: pointDuration.toFixed(1) + "s",
+            motivo: motivo
         }
     });
 

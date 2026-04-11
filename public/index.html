@@ -53,6 +53,85 @@
         <div id="aviso-pista" style="display: none;">🔄 CAMBIO DE PISTA</div>
     </div>
 
+    <!-- Overlay de Estadísticas de Partido (Descansos) -->
+    <div id="stats-overlay" class="glass">
+        <div class="stats-header">
+            <div class="stats-icon">📊</div>
+            <div class="stats-title-group">
+                <h3>RESUMEN TÁCTICO</h3>
+                <p id="stats-moment">Descanso de Pista</p>
+            </div>
+            <button id="close-stats">×</button>
+        </div>
+        
+        <div class="stats-container">
+            <!-- Columna Ataque -->
+            <div class="stats-column">
+                <h4>ATAQUE</h4>
+                <div class="stat-item" id="stat-winners">
+                    <span class="label">Total Winners</span>
+                    <span class="value">0 <small class="delta">(0%)</small></span>
+                </div>
+                <div class="stat-subgrid">
+                    <div class="stat-subitem"><span>Derecha</span> <b id="sub-win-der">0</b></div>
+                    <div class="stat-subitem"><span>Revés</span> <b id="sub-win-rev">0</b></div>
+                </div>
+                <div class="stat-detail" id="winner-types">
+                    <!-- P/L/C counts -->
+                </div>
+            </div>
+
+            <!-- Columna Defensa (Fallos) -->
+            <div class="stats-column">
+                <h4>ERRORES</h4>
+                <div class="stat-item" id="stat-errors">
+                    <span class="label">Total Fallos</span>
+                    <span class="value">0 <small class="delta">(0%)</small></span>
+                </div>
+                <div class="stat-subgrid">
+                    <div class="stat-subitem"><span>Derecha</span> <b id="sub-err-der">0</b></div>
+                    <div class="stat-subitem"><span>Revés</span> <b id="sub-err-rev">0</b></div>
+                </div>
+                <div class="stat-detail" id="error-types">
+                    <!-- P/L/C counts -->
+                </div>
+            </div>
+
+            <!-- Columna Saque & Ritmo -->
+            <div class="stats-column">
+                <h4>SAQUE & RITMO</h4>
+                <div class="stat-row-metrics">
+                    <div class="mini-stat">
+                        <span class="label">1er Saque %</span>
+                        <span id="stat-first-serve" class="value">0%</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="label">Aces</span>
+                        <span id="stat-aces" class="value">0</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="label">Dobles F.</span>
+                        <span id="stat-double-faults" class="value">0</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Potencia Media</span>
+                    <span id="stat-power-avg" class="value">0G <small class="delta">(0%)</small></span>
+                </div>
+                <div class="stat-max-power">
+                    <span class="label">PICO MÁXIMO:</span>
+                    <span id="stat-power-max" class="value">--</span>
+                    <p id="stat-power-max-desc">--</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-footer">
+            <div class="match-time">Tiempo medio/punto: <span id="stat-time-point">0s</span></div>
+            <div class="match-time">Tiempo medio/juego: <span id="stat-time-game">0s</span></div>
+        </div>
+    </div>
+
     <!-- Panel de Métricas del Último Punto -->
     <div id="panel-metricas" class="panel-metricas" style="margin: 20px;">
         <h3>ANÁLISIS DE ÚLTIMO PUNTO</h3>
@@ -72,6 +151,10 @@
             <div class="metrica">
                 <span class="label">Duración</span>
                 <span id="metric-dur" class="valor">--</span>
+            </div>
+            <div class="metrica">
+                <span class="label">Motivo del Punto</span>
+                <span id="metric-reason" class="valor" style="color: var(--gold); font-size: 1.2rem;">--</span>
             </div>
         </div>
 
@@ -94,7 +177,7 @@
     <button id="pingButton">Enviar Ping (Prueba)</button>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="js/main.js"></script>
+    <script type="module" src="js/main.js"></script>
     </div>
 </body>
 
