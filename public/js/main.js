@@ -40,6 +40,11 @@ if (cardEntrenamiento) {
 // Referencias al Marcador
 const uiPuntos = { yo: document.getElementById('puntos-yo'), rival: document.getElementById('puntos-rival') };
 const uiSaque = { yo: document.getElementById('saque-yo'), rival: document.getElementById('saque-rival') };
+const uiNombres = { yo: document.querySelector('#fila-yo .col-nombre'), rival: document.querySelector('#fila-rival .col-nombre') };
+
+// Referencias Video Nadal
+const nadalOverlay = document.getElementById('nadal-overlay');
+const nadalVideo = document.getElementById('nadal-video');
 
 const uiSets = [
     { yo: document.getElementById('s1-yo'), rival: document.getElementById('s1-rival') },
@@ -238,11 +243,39 @@ async function recuperarEstadisticas() {
 
 // --- LÓGICA DE SAQUE RECIBIDA DEL MÓVIL ---
 socket.on('saque-definido', (quien) => {
+    if (quien === 'Nadal') {
+
+        hablar("Homenaje a Rafa Nadal activado. El rey de la tierra batida saca para usted.");
+        document.getElementById("nombre-yo").innerHTML = 'NADAL  <span class="pelota-saque" id="saque-yo" style="visibility: hidden;">🎾</span>';
+        uiSaque.yo = document.getElementById('saque-yo'); // Actualizar referencia del elemento recreado
+        partido.quienSaca = 0;
+        partido.servidorInicialSet = 0;
+
+        actualizarMarcadorUI();
+        setTimeout(() => {
+            activarHomenajeNadal();
+        }, 5000);
+        return;
+    }
     partido.quienSaca = (quien === 'yo') ? 0 : 1;
     partido.servidorInicialSet = partido.quienSaca;
     actualizarMarcadorUI();
     hablar("Saque inicial definido. Empieza sacando " + (quien === 'yo' ? "usted" : "el rival"));
 });
+
+function activarHomenajeNadal() {
+    // Reproducir video
+    if (nadalOverlay && nadalVideo) {
+        nadalOverlay.style.display = 'flex';
+        nadalVideo.play();
+
+        // Al terminar el vídeo, ocultar overlay
+        nadalVideo.onended = () => {
+            nadalOverlay.style.display = 'none';
+        };
+    }
+}
+
 
 function cambiarServidorJuego() {
     partido.quienSaca = 1 - partido.quienSaca;

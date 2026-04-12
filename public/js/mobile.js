@@ -505,6 +505,7 @@ function activarVoz() {
             else if (modoActual === 'MODO PARTIDO' && !saqueDefinido) {
                 if (transcript === "yo" || transcript.includes(" yo")) { socket.emit('definir-saque', 'yo'); }
                 else if (transcript === "rival" || transcript.includes("rival")) { socket.emit('definir-saque', 'rival'); }
+                else if (transcript === "rafa" || transcript.includes("rafa") || transcript.includes("nadal")) { socket.emit('definir-saque', 'Nadal'); }
             }
         };
         recognition.start();
