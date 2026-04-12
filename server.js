@@ -53,14 +53,15 @@ app.get('/ip', (req, res) => {
 app.get('/match-stats', (_, res) => {
     try {
         if (fs.existsSync(STATS_FILE)) {
-            const data = fs.readFileSync(STATS_FILE, 'utf8');
-            res.json(JSON.parse(data));
-        } else {
-            res.json(matchStats); // Estructura vacía inicial
+            const data = fs.readFileSync(STATS_FILE, 'utf8').trim();
+            if (data) {
+                return res.json(JSON.parse(data));
+            }
         }
+        res.json(matchStats); // Devolver estructura por defecto si no hay datos
     } catch (err) {
         console.error("Error leyendo estadísticas:", err);
-        res.status(500).json({ error: "No se pudieron recuperar las estadísticas" });
+        res.json(matchStats); // Devolver estructura por defecto en lugar de error 500
     }
 });
 
@@ -79,6 +80,13 @@ io.on('connection', (socket) => {
 
     // Evento para resetear el sistema a la pantalla inicial
     socket.on('resetear-a-inicio', () => {
+        // Reiniciar estadísticas del partido
+        matchStats = {
+            points: [],
+            games: [],
+            startTime: Date.now()
+        };
+        saveStats();
         io.emit('reset-confirmado');
     });
 

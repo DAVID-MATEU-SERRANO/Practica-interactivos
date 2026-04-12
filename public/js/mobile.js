@@ -92,6 +92,12 @@ if (btnIniciar) {
         activarSensores();
         activarVoz();
     });
+
+    // AUTO-INICIO tras un RESET (salir)
+    if (sessionStorage.getItem('skipStartOverlay') === 'true') {
+        sessionStorage.removeItem('skipStartOverlay');
+        setTimeout(() => { btnIniciar.click(); }, 300);
+    }
 }
 
 // Sincroniza el modo del sistema (Partido, Entrenamiento o Lobby)
@@ -620,4 +626,4 @@ async function predictWebcam() {
 }
 
 // Reset y Funciones Auxiliares
-socket.on('reset-confirmado', () => { window.location.reload(); });
+socket.on('reset-confirmado', () => { sessionStorage.setItem('skipStartOverlay', 'true'); window.location.reload(); });

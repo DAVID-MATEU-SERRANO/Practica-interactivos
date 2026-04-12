@@ -181,6 +181,13 @@ if (btnIniciar) {
         hablar("Bienvenido al sistema de Tenis Inteligente. Puede decir Partido o Entrenamiento al móvil para comenzar.");
         recuperarEstadisticas();
     });
+
+    // AUTO-INICIO tras un RESET (salir)
+    if (sessionStorage.getItem('skipStartOverlay') === 'true') {
+        sessionStorage.removeItem('skipStartOverlay');
+        // Pequeño delay para asegurar que todo cargó
+        setTimeout(() => { btnIniciar.click(); }, 300);
+    }
 }
 
 function resetEstadoPartido() {
@@ -854,6 +861,7 @@ socket.on('modo-actualizado', (modo) => {
 
 socket.on('reset-confirmado', () => {
     hablar("Volviendo a la pantalla de inicio.");
+    sessionStorage.setItem('skipStartOverlay', 'true');
     setTimeout(() => { window.location.reload(); }, 2000);
 });
 
