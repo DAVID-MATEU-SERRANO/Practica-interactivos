@@ -859,19 +859,19 @@ socket.on('modo-actualizado', (modo) => {
         if (trainingTipsContainer) trainingTipsContainer.style.display = 'none';
         if (feedbackBadge) feedbackBadge.style.display = 'none';
     } else {
-        // MODO DASHBOARD / LOBBY
+        // MODO DASHBOARD / LOBBY / RESET SOFT
         document.body.classList.remove('match-active');
         lobbyView.style.display = 'flex';
         marcadorView.style.display = 'none';
         entrenamientoView.style.display = 'none';
+
+        // Resetar estados locales
+        resetEstadoPartido();
+        reiniciarDrill();
+        hablar("Volviendo al menú principal.");
     }
 });
 
-socket.on('reset-confirmado', () => {
-    hablar("Volviendo a la pantalla de inicio.");
-    sessionStorage.setItem('skipStartOverlay', 'true');
-    setTimeout(() => { window.location.reload(); }, 2000);
-});
 
 function hablar(mensaje) {
     if (partido.estaSilenciado) return;

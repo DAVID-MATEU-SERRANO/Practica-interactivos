@@ -642,4 +642,3 @@ async function predictWebcam() {
 }
 
 // Reset y Funciones Auxiliares
-socket.on('reset-confirmado', () => { sessionStorage.setItem('skipStartOverlay', 'true'); window.location.reload(); });

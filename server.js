@@ -87,7 +87,7 @@ io.on('connection', (socket) => {
             startTime: Date.now()
         };
         saveStats();
-        io.emit('reset-confirmado');
+        io.emit('modo-actualizado', 'LOBBY');
     });
 
 
