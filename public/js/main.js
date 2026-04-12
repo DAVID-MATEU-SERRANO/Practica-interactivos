@@ -28,6 +28,8 @@ const txtAngulo = document.getElementById('txt-angulo');
 const feedbackBadge = document.getElementById('feedback-badge');
 const tipExtension = document.getElementById('tip-extension');
 const tipContacto = document.getElementById('tip-contacto');
+const angleDisplay = document.getElementById('angle-display');
+const trainingTipsContainer = document.querySelector('.training-tips');
 
 // Handlers para las tarjetas del Lobby
 if (cardPartido) {
@@ -851,6 +853,11 @@ socket.on('modo-actualizado', (modo) => {
         entrenamientoView.style.display = 'flex';
         hablar("Modo entrenamiento activado. Seleccione su golpe en el controlador.");
         dibujarPantallaSeleccionEntrenamiento();
+
+        // Ocultar extras inicialmente en la selección
+        if (angleDisplay) angleDisplay.style.display = 'none';
+        if (trainingTipsContainer) trainingTipsContainer.style.display = 'none';
+        if (feedbackBadge) feedbackBadge.style.display = 'none';
     } else {
         // MODO DASHBOARD / LOBBY
         document.body.classList.remove('match-active');
@@ -1203,13 +1210,28 @@ socket.on('submodo-actualizado', (submodo) => {
     if (!submodo) {
         hablar("Volviendo a la selección de entrenamiento. Diga Fondo, Saque o Línea para comenzar una serie.");
         dibujarPantallaSeleccionEntrenamiento();
+        
+        // Ocultar extras al volver a selección
+        if (angleDisplay) angleDisplay.style.display = 'none';
+        if (trainingTipsContainer) trainingTipsContainer.style.display = 'none';
+        if (feedbackBadge) feedbackBadge.style.display = 'none';
         return;
+    }
+
+    // Mostrar extras solo en modos biomecánicos (Fondo y Saque)
+    if (submodo === 'FONDO' || submodo === 'SAQUE') {
+        if (angleDisplay) angleDisplay.style.display = 'block';
+        if (trainingTipsContainer) trainingTipsContainer.style.display = 'flex';
+    } else {
+        // En LINEA o selección, ocultamos los extras biomecánicos
+        if (angleDisplay) angleDisplay.style.display = 'none';
+        if (trainingTipsContainer) trainingTipsContainer.style.display = 'none';
     }
 
     if (submodo === 'LINEA') {
         cargarModeloLinea();
         hablar("Modo detección de línea activado. Vigila donde pisas.");
-    } else {
+    } else if (submodo) {
         hablar(`Modo ${submodo.toLowerCase()} activado. Empezamos serie de cinco.`);
     }
 });
