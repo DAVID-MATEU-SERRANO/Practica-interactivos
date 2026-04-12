@@ -850,6 +850,7 @@ socket.on('modo-actualizado', (modo) => {
         marcadorView.style.display = 'none';
         entrenamientoView.style.display = 'flex';
         hablar("Modo entrenamiento activado. Seleccione su golpe en el controlador.");
+        dibujarPantallaSeleccionEntrenamiento();
     } else {
         // MODO DASHBOARD / LOBBY
         document.body.classList.remove('match-active');
@@ -874,6 +875,36 @@ function hablar(mensaje) {
 }
 
 // --- LÓGICA DE ENTRENAMIENTO RECIBIDA DEL MÓVIL ---
+
+function dibujarPantallaSeleccionEntrenamiento() {
+    if (!ctxEntrenamiento) return;
+    
+    // Asegurar dimensiones
+    if (canvasEntrenamiento.offsetWidth > 0) {
+        canvasEntrenamiento.width = canvasEntrenamiento.offsetWidth;
+        canvasEntrenamiento.height = canvasEntrenamiento.offsetHeight;
+    }
+
+    ctxEntrenamiento.clearRect(0, 0, canvasEntrenamiento.width, canvasEntrenamiento.height);
+    ctxEntrenamiento.fillStyle = "#111";
+    ctxEntrenamiento.fillRect(0, 0, canvasEntrenamiento.width, canvasEntrenamiento.height);
+
+    ctxEntrenamiento.fillStyle = "white";
+    ctxEntrenamiento.textAlign = "center";
+    ctxEntrenamiento.font = "bold 34px Arial";
+    ctxEntrenamiento.fillText("MODO ENTRENAMIENTO", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2 - 40);
+
+    const accentCol = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#fbbf24';
+    ctxEntrenamiento.font = "26px Arial";
+    ctxEntrenamiento.fillStyle = accentCol;
+    ctxEntrenamiento.fillText("DI 'FONDO', 'SAQUE' O 'LÍNEA' EN EL MÓVIL", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2 + 20);
+
+    ctxEntrenamiento.fillStyle = "#888";
+    ctxEntrenamiento.font = "18px Arial";
+    ctxEntrenamiento.fillText("(La cámara se activará al elegir modo)", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2 + 60);
+
+    ctxEntrenamiento.textAlign = "start"; // Reset
+}
 
 // Variable para guardar el último frame recibido
 let ultimoFrameVideo = new Image();
@@ -926,24 +957,7 @@ socket.on('training-data', (data) => {
 
     // --- PANTALLA DE SELECCIÓN INICIAL ---
     if (!subModoTraining) {
-        ctxEntrenamiento.fillStyle = "#111";
-        ctxEntrenamiento.fillRect(0, 0, canvasEntrenamiento.width, canvasEntrenamiento.height);
-
-        ctxEntrenamiento.fillStyle = "white";
-        ctxEntrenamiento.textAlign = "center";
-        ctxEntrenamiento.font = "bold 32px Arial";
-        ctxEntrenamiento.fillText("MODO ENTRENAMIENTO", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2 - 40);
-
-        const accentCol = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
-        ctxEntrenamiento.font = "24px Arial";
-        ctxEntrenamiento.fillStyle = accentCol;
-        ctxEntrenamiento.fillText("DI 'FONDO', 'SAQUE' O 'LÍNEA' EN EL MÓVIL", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2 + 20);
-
-        ctxEntrenamiento.fillStyle = "#888";
-        ctxEntrenamiento.font = "16px Arial";
-        ctxEntrenamiento.fillText("(La cámara se activará al elegir modo)", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2 + 60);
-
-        ctxEntrenamiento.textAlign = "start"; // Reset
+        dibujarPantallaSeleccionEntrenamiento();
         return;
     }
 
@@ -1184,7 +1198,13 @@ socket.on('training-data', (data) => {
 
 socket.on('submodo-actualizado', (submodo) => {
     subModoTraining = submodo;
-    reiniciarDrill(); // Resetear al cambiar modo
+    reiniciarDrill(); // Resetear al cambiar/salir de modo
+
+    if (!submodo) {
+        hablar("Volviendo a la selección de entrenamiento. Diga Fondo, Saque o Línea para comenzar una serie.");
+        dibujarPantallaSeleccionEntrenamiento();
+        return;
+    }
 
     if (submodo === 'LINEA') {
         cargarModeloLinea();

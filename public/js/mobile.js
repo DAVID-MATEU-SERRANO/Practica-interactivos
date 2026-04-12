@@ -158,12 +158,22 @@ socket.on('registrar-fin-juego', (data) => {
 socket.on('submodo-actualizado', (submodo) => {
     const oldFacingMode = currentFacingMode;
     currentSubModo = submodo;
+    
+    if (!submodo) {
+        stopTraining();
+        return;
+    }
+
     currentFacingMode = (submodo === 'LINEA') ? 'environment' : 'user';
 
-    // Solo reiniciar cámara si el facingMode ha cambiado
-    if (webcamRunning && oldFacingMode !== currentFacingMode) {
+    // Gestión de cámara según el modo
+    if (!webcamRunning) {
+        // Si la cámara estaba apagada (por un "salir"), la encendemos
+        startTraining();
+    } else if (oldFacingMode !== currentFacingMode) {
+        // Si ya estaba encendida pero hay que cambiar de cámara (Fondo <-> Línea)
         stopTraining();
-        setTimeout(() => { startTraining(); }, 400); // Un poco más de margen para el hardware
+        setTimeout(() => { startTraining(); }, 400); 
     }
 });
 
@@ -500,7 +510,13 @@ function activarVoz() {
             const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
             if (transcript.includes("partido")) { socket.emit('cambiar-modo', 'MODO PARTIDO'); }
             else if (transcript.includes("entrenamiento")) { socket.emit('cambiar-modo', 'MODO ENTRENAMIENTO'); }
-            else if (transcript.includes("salir")) { socket.emit('resetear-a-inicio'); }
+            else if (transcript.includes("salir")) { 
+                if (modoActual === 'MODO ENTRENAMIENTO' && currentSubModo) {
+                    socket.emit('cambiar-submodo', null);
+                } else {
+                    socket.emit('resetear-a-inicio');
+                }
+            }
             else if (transcript.includes("silenciar")) { socket.emit('alternar-audio', true); }
             else if (transcript.includes("activar")) { socket.emit('alternar-audio', false); }
             else if (transcript.includes("fondo")) { socket.emit('cambiar-submodo', 'FONDO'); }
