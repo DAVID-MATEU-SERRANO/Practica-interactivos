@@ -107,6 +107,17 @@ io.on('connection', (socket) => {
         io.emit('punto-registrado', payload);
     });
 
+    // Evento para deshacer el último punto anotado
+    socket.on('deshacer-punto', () => {
+        console.log("Evento deshacer-punto recibido");
+        if (matchStats.points.length > 0) {
+            matchStats.points.pop();
+            saveStats();
+            console.log("Punto deshecho");
+            io.emit('punto-deshecho', matchStats);
+        }
+    });
+
     // Evento para registrar el fin de un juego
     socket.on('registrar-fin-juego', (gameData) => {
         matchStats.games.push({

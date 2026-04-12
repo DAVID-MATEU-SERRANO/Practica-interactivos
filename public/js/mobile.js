@@ -176,70 +176,70 @@ function activarSensores() {
                 // No procesar si los gestos están bloqueados, no estamos en partido o no se ha definido quién saca
                 if (lockGestos || modoActual !== 'MODO PARTIDO' || !saqueDefinido) return;
 
-            // Aplicamos el "Moving Average" para limpiar el ruido eléctrico del sensor en los 3 ejes
-            currentMA.ax = movingAverage(buffers.ax, sensor.x);
-            currentMA.ay = movingAverage(buffers.ay, sensor.y);
-            currentMA.az = movingAverage(buffers.az, sensor.z);
+                // Aplicamos el "Moving Average" para limpiar el ruido eléctrico del sensor en los 3 ejes
+                currentMA.ax = movingAverage(buffers.ax, sensor.x);
+                currentMA.ay = movingAverage(buffers.ay, sensor.y);
+                currentMA.az = movingAverage(buffers.az, sensor.z);
 
-            // Guardamos los valores reales (sin filtrar) para no perder el "pico" máximo de fuerza del impacto
-            rawMag.ax = sensor.x;
-            rawMag.ay = sensor.y;
-            rawMag.az = sensor.z;
+                // Guardamos los valores reales (sin filtrar) para no perder el "pico" máximo de fuerza del impacto
+                rawMag.ax = sensor.x;
+                rawMag.ay = sensor.y;
+                rawMag.az = sensor.z;
 
-            // Calculamos la magnitud del vector (Pitágoras 3D) para saber la aceleración total
-            const rawMagnitude = Math.sqrt(rawMag.ax ** 2 + rawMag.ay ** 2 + rawMag.az ** 2);
-            // Convertimos a fuerzas G (dividiendo por la gravedad terrestre 9.8)
-            const rawPowerG = rawMagnitude / 9.8;
+                // Calculamos la magnitud del vector (Pitágoras 3D) para saber la aceleración total
+                const rawMagnitude = Math.sqrt(rawMag.ax ** 2 + rawMag.ay ** 2 + rawMag.az ** 2);
+                // Convertimos a fuerzas G (dividiendo por la gravedad terrestre 9.8)
+                const rawPowerG = rawMagnitude / 9.8;
 
-            const now = Date.now();
+                const now = Date.now();
 
-            // Usamos la magnitud SUAVIZADA solo para detectar si hubo un movimiento brusco (umbral)
-            const magnitude = Math.sqrt(currentMA.ax ** 2 + currentMA.ay ** 2 + currentMA.az ** 2);
-            const currentPowerG = rawPowerG; // Usamos el valor real para la potencia final del golpe
+                // Usamos la magnitud SUAVIZADA solo para detectar si hubo un movimiento brusco (umbral)
+                const magnitude = Math.sqrt(currentMA.ax ** 2 + currentMA.ay ** 2 + currentMA.az ** 2);
+                const currentPowerG = rawPowerG; // Usamos el valor real para la potencia final del golpe
 
-            // DETECCIÓN DE GOLPE (Swing)
-            if (magnitude > UMBRAL_GESTO) {
-                // Evitamos detectar dos veces el mismo golpe (filtro de tiempo)
-                if (now - lastStrikeTime < TIEMPO_MIN_ENTRE_GOLPES) return;
+                // DETECCIÓN DE GOLPE (Swing)
+                if (magnitude > UMBRAL_GESTO) {
+                    // Evitamos detectar dos veces el mismo golpe (filtro de tiempo)
+                    if (now - lastStrikeTime < TIEMPO_MIN_ENTRE_GOLPES) return;
 
-                // Si no estamos capturando ya un pico de fuerza, empezamos ahora
-                if (!capturingPeak) {
-                    lastStrikeTime = now;
-                    capturingPeak = true;
-                    peakPower = currentPowerG;
-                    peakTime = now;
+                    // Si no estamos capturando ya un pico de fuerza, empezamos ahora
+                    if (!capturingPeak) {
+                        lastStrikeTime = now;
+                        capturingPeak = true;
+                        peakPower = currentPowerG;
+                        peakTime = now;
 
-                    // Esperamos 500ms para analizar todo el recorrido del brazo antes de confirmar el golpe
-                    setTimeout(() => {
-                        // Si el golpe tuvo una fuerza mínima realista (> 1.8G), lo registramos
-                        if (peakPower > 1.8) {
-                            registrarGolpeTenis(now);
-                        }
-                        capturingPeak = false;
-                    }, 500);
+                        // Esperamos 500ms para analizar todo el recorrido del brazo antes de confirmar el golpe
+                        setTimeout(() => {
+                            // Si el golpe tuvo una fuerza mínima realista (> 1.8G), lo registramos
+                            if (peakPower > 1.8) {
+                                registrarGolpeTenis(now);
+                            }
+                            capturingPeak = false;
+                        }, 500);
+                    }
                 }
-            }
 
-            // Si estamos en medio de un swing, guardamos el valor más alto alcanzado
-            if (capturingPeak) {
-                if (rawPowerG > peakPower) {
-                    peakPower = rawPowerG;
-                    peakTime = now;
+                // Si estamos en medio de un swing, guardamos el valor más alto alcanzado
+                if (capturingPeak) {
+                    if (rawPowerG > peakPower) {
+                        peakPower = rawPowerG;
+                        peakTime = now;
+                    }
                 }
-            }
 
-            // Guardamos el estado del sensor en una lista circular para poder analizar la trayectoria después
-            sensorHistory.push({
-                t: now,
-                mag: currentPowerG,
-                ax: currentMA.ax,
-                ay: currentMA.ay,
-                az: currentMA.az,
-                rx: currentMA.rx,
-                ry: currentMA.ry
-            });
-            // Si el historial es muy viejo, borramos el primer elemento
-            if (sensorHistory.length > HISTORIAL_MAX_SIZE) sensorHistory.shift();
+                // Guardamos el estado del sensor en una lista circular para poder analizar la trayectoria después
+                sensorHistory.push({
+                    t: now,
+                    mag: currentPowerG,
+                    ax: currentMA.ax,
+                    ay: currentMA.ay,
+                    az: currentMA.az,
+                    rx: currentMA.rx,
+                    ry: currentMA.ry
+                });
+                // Si el historial es muy viejo, borramos el primer elemento
+                if (sensorHistory.length > HISTORIAL_MAX_SIZE) sensorHistory.shift();
             } catch (error) {
                 console.error("Error crítico en acelerómetro:", error);
                 capturingPeak = false;
@@ -262,14 +262,14 @@ function activarSensores() {
 
                 if (lockGestos || modoActual !== 'MODO PARTIDO' || !saqueDefinido) return;
 
-            const now = Date.now();
-            const magnitude = Math.sqrt(currentMA.ax ** 2 + currentMA.ay ** 2 + currentMA.az ** 2);
+                const now = Date.now();
+                const magnitude = Math.sqrt(currentMA.ax ** 2 + currentMA.ay ** 2 + currentMA.az ** 2);
 
-            // Si el móvil gira rápido (en el eje Y) pero el brazo NO se está moviendo fuerte (baja aceleración),
-            // el sistema entiende que es un gesto de "girar la muñeca" para sumar un punto al marcador.
-            if (Math.abs(currentMA.ry) > UMBRAL_ROTACION_PUNTO && magnitude < MAX_ACCEL_GESTO) {
-                if (now - lastRotationPeakTime > 400) {
-                    lastRotationPeakTime = now;
+                // Si el móvil gira rápido (en el eje Y) pero el brazo NO se está moviendo fuerte (baja aceleración),
+                // el sistema entiende que es un gesto de "girar la muñeca" para sumar un punto al marcador.
+                if (Math.abs(currentMA.ry) > UMBRAL_ROTACION_PUNTO && magnitude < MAX_ACCEL_GESTO) {
+                    if (now - lastRotationPeakTime > 400) {
+                        lastRotationPeakTime = now;
                         gestionarGiroPuntuacion(currentMA.ry);
                     }
                 }
@@ -501,6 +501,7 @@ function activarVoz() {
             else if (transcript.includes("saque")) { socket.emit('cambiar-submodo', 'SAQUE'); }
             else if (transcript.includes("línea")) { socket.emit('cambiar-submodo', 'LINEA'); }
             else if (transcript.includes("reiniciar")) { socket.emit('reiniciar-drill'); }
+            else if (transcript.includes("cancelar") || transcript.includes("deshacer")) { socket.emit('deshacer-punto'); }
             else if (modoActual === 'MODO PARTIDO' && !saqueDefinido) {
                 if (transcript === "yo" || transcript.includes(" yo")) { socket.emit('definir-saque', 'yo'); }
                 else if (transcript === "rival" || transcript.includes("rival")) { socket.emit('definir-saque', 'rival'); }

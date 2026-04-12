@@ -178,6 +178,44 @@ if (btnIniciar) {
     });
 }
 
+function resetEstadoPartido() {
+    console.log("Reiniciando estado del partido para reconstrucción...");
+    partido.sets = [0, 0];
+    partido.games = [0, 0];
+    partido.puntos = [0, 0];
+    partido.setScores = [[0, 0], [0, 0], [0, 0]];
+    partido.currentSetIndex = 0;
+    partido.isTieBreak = false;
+    partido.tieBreakPoints = [0, 0];
+    partido.isMatchFinished = false;
+    partido.quienSaca = partido.servidorInicialSet;
+    partido.matchHistory = [];
+    partido.gameHistory = [];
+    partido.inicioUltimoJuego = Date.now();
+    actualizarMarcadorUI();
+}
+
+function reconstruirPartido(stats) {
+    if (!stats || !stats.points) return;
+    const pointsToReplay = stats.points;
+    console.log(`Iniciando reconstrucción de ${pointsToReplay.length} puntos...`);
+
+    resetEstadoPartido();
+
+    pointsToReplay.forEach(p => {
+        // Objeto payload compatible con procesarPunto
+        const payload = {
+            quien: p.winner || p.ganador,
+            metrics: p.metrics || null
+        };
+        procesarPunto(payload, true); // true for silent (replay)
+    });
+
+    // Restaurar el matchHistory oficial del servidor para que coincida exactamente
+    partido.matchHistory = pointsToReplay;
+    actualizarMarcadorUI();
+}
+
 async function recuperarEstadisticas() {
     try {
         console.log("Intentando recuperar estadísticas del servidor...");
@@ -224,9 +262,18 @@ function verificarServidorTieBreak() {
 // --- LÓGICA DE PUNTUACIÓN ---
 
 socket.on('punto-registrado', (payload) => {
+    procesarPunto(payload);
+});
+
+socket.on('punto-deshecho', (stats) => {
+    console.log("Recuperando estado previo tras deshacer punto...");
+    reconstruirPartido(stats);
+    hablar("Punto deshecho.");
+});
+
+function procesarPunto(payload, silent = false) {
     statsOverlay.classList.remove('visible');
     if (partido.isMatchFinished || partido.quienSaca === null) return;
-
 
     let quien, metrics;
     if (typeof payload === 'string') {
@@ -259,6 +306,12 @@ socket.on('punto-registrado', (payload) => {
 
     // Desacoplar para asegurar que la UI reaccione y las promesas/estados sincrónicos estén limpios
     setTimeout(() => verificarCambioPista(), 0);
+};
+
+socket.on('punto-deshecho', () => {
+    console.log("Punto deshecho");
+    console.log(partido.matchHistory);
+    actualizarMarcadorUI();
 });
 
 function anotarPuntoEstandar(w, l) {
