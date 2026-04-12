@@ -34,7 +34,7 @@ let poseLandmarker = undefined;
 let webcamRunning = false;
 const videoElement = document.getElementById("webcam");
 let currentFacingMode = "user"; // "user" (front) o "environment" (back)
-let currentSubModo = "FONDO";
+let currentSubModo = null;
 
 // Reutilizar canvas para el envío de video
 const smallCanvas = document.createElement('canvas');
@@ -510,7 +510,7 @@ function activarVoz() {
             const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
             if (transcript.includes("partido")) { socket.emit('cambiar-modo', 'MODO PARTIDO'); }
             else if (transcript.includes("entrenamiento")) { socket.emit('cambiar-modo', 'MODO ENTRENAMIENTO'); }
-            else if (transcript.includes("salir")) { 
+            else if (transcript.includes("salir") || transcript.includes("volver")) { 
                 if (modoActual === 'MODO ENTRENAMIENTO' && currentSubModo) {
                     socket.emit('cambiar-submodo', null);
                 } else {
