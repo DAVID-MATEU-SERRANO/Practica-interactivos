@@ -202,10 +202,27 @@ function resetEstadoPartido() {
     partido.isTieBreak = false;
     partido.tieBreakPoints = [0, 0];
     partido.isMatchFinished = false;
-    partido.quienSaca = partido.servidorInicialSet;
+    partido.quienSaca = null;            // Asegurar que vuelve a estar nulo
+    partido.servidorInicialSet = null;   // Asegurar que vuelve a estar nulo
     partido.matchHistory = [];
     partido.gameHistory = [];
     partido.inicioUltimoJuego = Date.now();
+
+    // Restaurar nombres originales (por si se activó el Easter Egg de Rafa)
+    if (document.getElementById("nombre-yo")) {
+        document.getElementById("nombre-yo").innerHTML = 'YO <span class="pelota-saque" id="saque-yo" style="visibility: hidden;">🎾</span>';
+        uiSaque.yo = document.getElementById('saque-yo');
+    }
+    
+    // Detener vídeo de Nadal si estuviera corriendo
+    if (nadalOverlay) {
+        nadalOverlay.style.display = 'none';
+        if (nadalVideo) {
+            nadalVideo.pause();
+            nadalVideo.currentTime = 0;
+        }
+    }
+
     actualizarMarcadorUI();
 }
 
@@ -214,10 +231,25 @@ function reconstruirPartido(stats) {
     const pointsToReplay = stats.points;
     console.log(`Iniciando reconstrucción de ${pointsToReplay.length} puntos...`);
 
+    // Preservar quién empezó sacando (del objeto stats o del estado actual)
+    const servidorOriginal = stats.servidorInicial || (partido.servidorInicialSet === 0 ? 'yo' : (partido.servidorInicialSet === 1 ? 'rival' : null));
+
     resetEstadoPartido();
 
+    // Si tenemos servidor definido, restaurarlo antes de procesar puntos
+    if (servidorOriginal) {
+        if (servidorOriginal === 'Nadal') {
+            partido.quienSaca = 0;
+            partido.servidorInicialSet = 0;
+            document.getElementById("nombre-yo").innerHTML = 'NADAL  <span class="pelota-saque" id="saque-yo" style="visibility: hidden;">🎾</span>';
+            uiSaque.yo = document.getElementById('saque-yo');
+        } else {
+            partido.quienSaca = (servidorOriginal === 'yo') ? 0 : 1;
+            partido.servidorInicialSet = partido.quienSaca;
+        }
+    }
+
     pointsToReplay.forEach(p => {
-        // Objeto payload compatible con procesarPunto
         const payload = {
             quien: p.winner || p.ganador,
             metrics: p.metrics || null
@@ -225,7 +257,6 @@ function reconstruirPartido(stats) {
         procesarPunto(payload, true); // true for silent (replay)
     });
 
-    // Restaurar el matchHistory oficial del servidor para que coincida exactamente
     partido.matchHistory = pointsToReplay;
     actualizarMarcadorUI();
 }
@@ -314,7 +345,7 @@ socket.on('punto-deshecho', (stats) => {
 });
 
 function procesarPunto(payload, silent = false) {
-    statsOverlay.classList.remove('visible');
+    if (!silent) statsOverlay.classList.remove('visible');
     if (partido.isMatchFinished || partido.quienSaca === null) return;
 
     let quien, metrics;
@@ -870,6 +901,9 @@ socket.on('modo-actualizado', (modo) => {
         reiniciarDrill();
         hablar("Volviendo al menú principal.");
     }
+});
+socket.on('solicitar-confirmacion-salir', () => {
+    hablar("¿Seguro que desea salir del partido? Diga salir para confirmar o no para continuar.");
 });
 
 

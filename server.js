@@ -21,6 +21,7 @@ app.use(express.json());
 let matchStats = {
     points: [],
     games: [],
+    servidorInicial: null, // null, 'yo', 'rival', 'Nadal'
     startTime: Date.now()
 };
 
@@ -90,6 +91,11 @@ io.on('connection', (socket) => {
         io.emit('modo-actualizado', 'LOBBY');
     });
 
+    // Evento puente para solicitar confirmación de voz al Dashboard
+    socket.on('solicitar-confirmacion-salir', () => {
+        io.emit('solicitar-confirmacion-salir');
+    });
+
 
 
     // Evento para anotar puntos en modo partido con métricas
@@ -119,7 +125,19 @@ io.on('connection', (socket) => {
     socket.on('deshacer-punto', () => {
         console.log("Evento deshacer-punto recibido");
         if (matchStats.points.length > 0) {
-            matchStats.points.pop();
+            const lastPoint = matchStats.points.pop();
+            
+            // Si el punto deshecho cerró un juego, eliminar también el juego de la historia
+            if (matchStats.games.length > 0) {
+                const lastGame = matchStats.games[matchStats.games.length - 1];
+                // Comprobamos si el marcador del juego coincide con el momento del punto
+                // Una forma sencilla es ver si el timestamp del juego es posterior o igual al del punto
+                if (lastGame.timestamp >= lastPoint.timestamp) {
+                    matchStats.games.pop();
+                    console.log("Juego deshecho también");
+                }
+            }
+            
             saveStats();
             console.log("Punto deshecho");
             io.emit('punto-deshecho', matchStats);
@@ -147,6 +165,8 @@ io.on('connection', (socket) => {
 
     // Evento para definir el saque inicial desde el móvil
     socket.on('definir-saque', (quien) => {
+        matchStats.servidorInicial = quien;
+        saveStats();
         io.emit('saque-definido', quien);
     });
 

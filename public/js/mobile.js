@@ -28,6 +28,8 @@ let lastStrikeTime = 0; // tiempo del último golpe
 let confirmTimer = null; // temporizador para confirmar un golpe
 let lockGestos = false;  // bloquea los gestos
 let isPointRunning = false; // indica si se está ejecutando un punto
+let esperandoConfirmacionSalir = false;
+let timeoutConfirmacion = null;
 
 // Variables para el modo entrenamiento
 let poseLandmarker = undefined;
@@ -111,6 +113,8 @@ socket.on('modo-actualizado', (modo) => {
         // Reset de estados internos al volver al Lobby
         saqueDefinido = false;
         esSegundoSaque = false;
+        esperandoConfirmacionSalir = false;
+        if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
         stopTraining();
     }
 });
@@ -513,9 +517,35 @@ function activarVoz() {
             else if (transcript.includes("salir") || transcript.includes("volver")) { 
                 if (modoActual === 'MODO ENTRENAMIENTO' && currentSubModo) {
                     socket.emit('cambiar-submodo', null);
+                } else if (modoActual === 'MODO PARTIDO' && !esperandoConfirmacionSalir) {
+                    // Iniciar secuencia de confirmación
+                    esperandoConfirmacionSalir = true;
+                    socket.emit('solicitar-confirmacion-salir');
+                    
+                    // Tiempo límite para confirmar
+                    if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
+                    timeoutConfirmacion = setTimeout(() => {
+                        esperandoConfirmacionSalir = false;
+                    }, 10000);
+                } else if (esperandoConfirmacionSalir) {
+                    // Confirmado por segunda vez
+                    if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
+                    esperandoConfirmacionSalir = false;
+                    socket.emit('resetear-a-inicio');
                 } else {
+                    // Caso general (Lobby o Entrenamiento sin submodo)
                     socket.emit('resetear-a-inicio');
                 }
+            }
+            else if (esperandoConfirmacionSalir && transcript.includes("si")) {
+                if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
+                esperandoConfirmacionSalir = false;
+                socket.emit('resetear-a-inicio');
+            }
+            else if (esperandoConfirmacionSalir && transcript.includes("no")) {
+                if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
+                esperandoConfirmacionSalir = false;
+                // Opcional: Feedback de cancelación
             }
             else if (transcript.includes("silenciar")) { socket.emit('alternar-audio', true); }
             else if (transcript.includes("activar")) { socket.emit('alternar-audio', false); }
