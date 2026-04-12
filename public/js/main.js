@@ -31,13 +31,7 @@ const tipContacto = document.getElementById('tip-contacto');
 const angleDisplay = document.getElementById('angle-display');
 const trainingTipsContainer = document.querySelector('.training-tips');
 
-// Handlers para las tarjetas del Lobby
-if (cardPartido) {
-    cardPartido.onclick = () => socket.emit('cambiar-modo', 'MODO PARTIDO');
-}
-if (cardEntrenamiento) {
-    cardEntrenamiento.onclick = () => socket.emit('cambiar-modo', 'MODO ENTRENAMIENTO');
-}
+// Las tarjetas del Lobby se gestionan ahora SOLO mediante comandos de voz
 
 // Referencias al Marcador
 const uiPuntos = { yo: document.getElementById('puntos-yo'), rival: document.getElementById('puntos-rival') };
@@ -84,6 +78,7 @@ let golpeSeleccionado = 'DERECHA'; // Por defecto
 let trainingActive = false;
 let subModoTraining = null; // null, 'FONDO' o 'SAQUE'
 let alturaMinimaMuñeca = 1.0; // Para el peak detector de saque
+let isReplaying = false; // Flag para silenciar audio y eventos durante la reconstrucción
 
 // --- VARIABLES DEL DESAFÍO DE 5 GOLPES ---
 let contadorIntentos = 0;
@@ -207,6 +202,8 @@ function resetEstadoPartido() {
     partido.matchHistory = [];
     partido.gameHistory = [];
     partido.inicioUltimoJuego = Date.now();
+    partido.ultimoIndiceDescanso = 0;
+    partido.ultimoIndiceJuegosDescanso = 0;
 
     // Restaurar nombres originales (por si se activó el Easter Egg de Rafa)
     if (document.getElementById("nombre-yo")) {
@@ -249,6 +246,7 @@ function reconstruirPartido(stats) {
         }
     }
 
+    isReplaying = true;
     pointsToReplay.forEach(p => {
         const payload = {
             quien: p.winner || p.ganador,
@@ -256,9 +254,15 @@ function reconstruirPartido(stats) {
         };
         procesarPunto(payload, true); // true for silent (replay)
     });
+    isReplaying = false;
 
-    partido.matchHistory = pointsToReplay;
+    // Emitir socket para que el servidor actualice también los juegos usando nuestra reconstrucción
+    socket.emit('sync-games', partido.gameHistory);
+
     actualizarMarcadorUI();
+    
+    // Al finalizar la re-construcción, verificamos el DOM para reflejar el estado correcto (ej. si quedó en descanso de pista)
+    setTimeout(() => verificarCambioPista(), 0);
 }
 
 async function recuperarEstadisticas() {
@@ -378,14 +382,35 @@ function procesarPunto(payload, silent = false) {
     actualizarMarcadorUI();
 
     // Desacoplar para asegurar que la UI reaccione y las promesas/estados sincrónicos estén limpios
-    setTimeout(() => verificarCambioPista(), 0);
+    if (!silent) {
+        setTimeout(() => verificarCambioPista(), 0);
+    } else {
+        // En reconstrucción (silent) replicamos la lógica sin mutar la UI, solo para avanzar el índice base de stats
+        let esCambio = false;
+        if (partido.isTieBreak) {
+            const totalPuntosTie = partido.tieBreakPoints[0] + partido.tieBreakPoints[1];
+            if (totalPuntosTie > 0 && totalPuntosTie % 6 === 0) esCambio = true;
+        } else if (partido.puntos[0] === 0 && partido.puntos[1] === 0) {
+            if (partido.games[0] === 0 && partido.games[1] === 0) {
+                if (partido.currentSetIndex > 0) {
+                    const prevSet = partido.setScores[partido.currentSetIndex - 1];
+                    if ((prevSet[0] + prevSet[1]) % 2 !== 0) esCambio = true;
+                }
+            } else {
+                if ((partido.games[0] + partido.games[1]) % 2 !== 0) esCambio = true;
+            }
+        }
+        
+        const esDescanso = (partido.isTieBreak || (partido.puntos[0] === 0 && partido.puntos[1] === 0));
+        if (esCambio && esDescanso) {
+            const setRecienTerminado = (partido.games[0] === 0 && partido.games[1] === 0 && partido.matchHistory.length > 0 && !partido.isTieBreak);
+            if (!setRecienTerminado) {
+                partido.ultimoIndiceDescanso = partido.matchHistory.length;
+                partido.ultimoIndiceJuegosDescanso = partido.gameHistory.length;
+            }
+        }
+    }
 };
-
-socket.on('punto-deshecho', () => {
-    console.log("Punto deshecho");
-    console.log(partido.matchHistory);
-    actualizarMarcadorUI();
-});
 
 function anotarPuntoEstandar(w, l) {
     if (partido.puntos[w] < 3) {
@@ -454,7 +479,10 @@ function ganarJuego(w) {
         duracion: duracionJuego,
         setIndex: partido.currentSetIndex
     };
-    socket.emit('registrar-fin-juego', payload);
+    
+    if (!isReplaying) {
+        socket.emit('registrar-fin-juego', payload);
+    }
 
     // Guardar localmente para cálculos de media
     partido.gameHistory.push(payload);
@@ -908,7 +936,7 @@ socket.on('solicitar-confirmacion-salir', () => {
 
 
 function hablar(mensaje) {
-    if (partido.estaSilenciado) return;
+    if (partido.estaSilenciado || isReplaying) return;
     const synth = window.speechSynthesis;
     const utterance = new SpeechSynthesisUtterance(mensaje);
     utterance.lang = 'es-ES';

@@ -18,6 +18,9 @@ const io = new Server(server);
 app.use(express.json());
 
 // --- ALMACENAMIENTO DE ESTADÍSTICAS ---
+// Estado del modo actual en el servidor
+let modoActual = 'LOBBY';
+let subModoActual = null;
 let matchStats = {
     points: [],
     games: [],
@@ -76,6 +79,17 @@ io.on('connection', (socket) => {
 
     // Evento para sincronizar el cambio de modo (Partido/Entrenamiento)
     socket.on('cambiar-modo', (modo) => {
+        // Solo se puede cambiar de modo desde el LOBBY
+        // (partido → entrenamiento directo o viceversa está prohibido)
+        const desdelobby = (modoActual === 'LOBBY' || modoActual === '');
+        const aModoPrincipal = (modo === 'MODO PARTIDO' || modo === 'MODO ENTRENAMIENTO');
+
+        if (aModoPrincipal && !desdelobby) {
+            console.warn(`⛔ Cambio de modo rechazado: ${modoActual} → ${modo} (debe pasar por LOBBY)`);
+            return; // Ignorar la petición
+        }
+
+        modoActual = modo;
         io.emit('modo-actualizado', modo);
     });
 
@@ -85,9 +99,12 @@ io.on('connection', (socket) => {
         matchStats = {
             points: [],
             games: [],
+            servidorInicial: null,
             startTime: Date.now()
         };
         saveStats();
+        modoActual = 'LOBBY';
+        subModoActual = null;
         io.emit('modo-actualizado', 'LOBBY');
     });
 
@@ -125,18 +142,10 @@ io.on('connection', (socket) => {
     socket.on('deshacer-punto', () => {
         console.log("Evento deshacer-punto recibido");
         if (matchStats.points.length > 0) {
-            const lastPoint = matchStats.points.pop();
+            matchStats.points.pop();
             
-            // Si el punto deshecho cerró un juego, eliminar también el juego de la historia
-            if (matchStats.games.length > 0) {
-                const lastGame = matchStats.games[matchStats.games.length - 1];
-                // Comprobamos si el marcador del juego coincide con el momento del punto
-                // Una forma sencilla es ver si el timestamp del juego es posterior o igual al del punto
-                if (lastGame.timestamp >= lastPoint.timestamp) {
-                    matchStats.games.pop();
-                    console.log("Juego deshecho también");
-                }
-            }
+            // Ya no manipulamos los games aquí basándonos en timestamps. 
+            // El cliente los reconstruirá iterativamente y emitirá 'sync-games'.
             
             saveStats();
             console.log("Punto deshecho");
@@ -153,8 +162,21 @@ io.on('connection', (socket) => {
         saveStats();
     });
 
-    // Evento para cambiar el sub-modo de entrenamiento (Fondo/Saque)
+    // Evento para sincronizar los juegos re-calculados (ej. tras deshacer punto)
+    socket.on('sync-games', (games) => {
+        matchStats.games = games;
+        saveStats();
+    });
+
+    // Evento para cambiar el sub-modo de entrenamiento (Fondo/Saque/Linea)
     socket.on('cambiar-submodo', (submodo) => {
+        // Solo se puede saltar a un submodo si no hay ninguno activo,
+        // o si se está saliendo (submodo === null)
+        if (submodo !== null && subModoActual !== null && submodo !== subModoActual) {
+            console.warn(`⛔ Cambio de submodo rechazado: ${subModoActual} → ${submodo} (pasa por null primero)`);
+            return;
+        }
+        subModoActual = submodo;
         io.emit('submodo-actualizado', submodo);
     });
 
@@ -165,7 +187,13 @@ io.on('connection', (socket) => {
 
     // Evento para definir el saque inicial desde el móvil
     socket.on('definir-saque', (quien) => {
-        matchStats.servidorInicial = quien;
+        // Reiniciar estadísticas al comenzar un partido nuevo
+        matchStats = {
+            points: [],
+            games: [],
+            servidorInicial: quien,
+            startTime: Date.now()
+        };
         saveStats();
         io.emit('saque-definido', quien);
     });

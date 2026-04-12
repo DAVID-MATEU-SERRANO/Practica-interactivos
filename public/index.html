@@ -55,6 +55,16 @@
 
         <!-- Vista de Marcador (Oculta por defecto) -->
         <div id="marcador-view" style="display: none; text-align: center;">
+            <div class="exit-hint-widget glass" style="position: fixed; bottom: 20px; left: 20px; padding: 10px 16px; border-radius: 12px; z-index: 10000; font-size: 0.8rem; color: var(--text-muted); opacity: 0.85; pointer-events: none; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: flex-start; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.2rem;">🎤</span>
+                    <span>Diga <b>"Salir"</b> para salir</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.2rem;">🎤</span>
+                    <span>Diga <b>"Cancelar"</b> para quitar el punto</span>
+                </div>
+            </div>
             <div id="status-container" class="glass"
                 style="max-width: fit-content; margin: 20px auto; padding: 10px 24px;">
                 <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">MODO ACTIVO: <span id="modo-texto"
@@ -183,6 +193,10 @@
         <!-- VISTA MODO ENTRENAMIENTO -->
         <div id="entrenamiento-view"
             style="display: none; position: fixed; inset: 0; background: var(--bg-dark); z-index: 1500; flex-direction: column; align-items: center; justify-content: center; padding: 40px;">
+            <div class="exit-hint-widget glass" style="position: fixed; bottom: 20px; left: 20px; padding: 10px 16px; border-radius: 12px; z-index: 10000; font-size: 0.8rem; color: var(--text-muted); opacity: 0.85; pointer-events: none; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">🎤</span>
+                <span>Diga <b>"Salir"</b> para salir</span>
+            </div>
             <div class="training-header" style="text-align: center; margin-bottom: 32px;">
                 <h1 class="heading-premium" style="color: var(--volt); margin: 0; font-size: 2.5rem;">ENTRENAMIENTO</h1>
                 <p style="color: var(--text-muted); margin: 8px 0;">Análisis biomecánico en tiempo real</p>
@@ -223,6 +237,11 @@
             <video id="nadal-video" style="width: 100%; height: 100%; object-fit: contain;">
                 <source src="easter_egg.mp4" type="video/mp4">
             </video>
+        </div>
+
+        <div class="audio-hint-widget glass" style="position: fixed; bottom: 20px; right: 20px; padding: 10px 16px; border-radius: 12px; z-index: 10000; font-size: 0.8rem; color: var(--text-muted); opacity: 0.85; pointer-events: none; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🎤</span>
+            <span>Diga <b>"Silenciar"</b> o <b>"Activar"</b> sonido</span>
         </div>
 
         <script src="/socket.io/socket.io.js"></script>

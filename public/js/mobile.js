@@ -162,7 +162,7 @@ socket.on('registrar-fin-juego', (data) => {
 socket.on('submodo-actualizado', (submodo) => {
     const oldFacingMode = currentFacingMode;
     currentSubModo = submodo;
-    
+
     if (!submodo) {
         stopTraining();
         return;
@@ -177,7 +177,7 @@ socket.on('submodo-actualizado', (submodo) => {
     } else if (oldFacingMode !== currentFacingMode) {
         // Si ya estaba encendida pero hay que cambiar de cámara (Fondo <-> Línea)
         stopTraining();
-        setTimeout(() => { startTraining(); }, 400); 
+        setTimeout(() => { startTraining(); }, 400);
     }
 });
 
@@ -512,52 +512,107 @@ function activarVoz() {
         recognition.onend = () => { try { recognition.start(); } catch (e) { } };
         recognition.onresult = (event) => {
             const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
-            if (transcript.includes("partido")) { socket.emit('cambiar-modo', 'MODO PARTIDO'); }
-            else if (transcript.includes("entrenamiento")) { socket.emit('cambiar-modo', 'MODO ENTRENAMIENTO'); }
-            else if (transcript.includes("salir") || transcript.includes("volver")) { 
-                if (modoActual === 'MODO ENTRENAMIENTO' && currentSubModo) {
-                    socket.emit('cambiar-submodo', null);
-                } else if (modoActual === 'MODO PARTIDO' && !esperandoConfirmacionSalir) {
-                    // Iniciar secuencia de confirmación
-                    esperandoConfirmacionSalir = true;
-                    socket.emit('solicitar-confirmacion-salir');
-                    
-                    // Tiempo límite para confirmar
-                    if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
-                    timeoutConfirmacion = setTimeout(() => {
-                        esperandoConfirmacionSalir = false;
-                    }, 10000);
-                } else if (esperandoConfirmacionSalir) {
-                    // Confirmado por segunda vez
-                    if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
-                    esperandoConfirmacionSalir = false;
-                    socket.emit('resetear-a-inicio');
-                } else {
-                    // Caso general (Lobby o Entrenamiento sin submodo)
-                    socket.emit('resetear-a-inicio');
+
+            // ── COMANDOS GLOBALES (funcionan siempre) ──────────────────────────
+            if (transcript.includes("silenciar")) { socket.emit('alternar-audio', true); return; }
+            if (transcript.includes("activar"))   { socket.emit('alternar-audio', false); return; }
+
+            // ── DESDE LOBBY: únicos comandos válidos para cambiar de modo ──────
+            if (modoActual === '' || modoActual === 'LOBBY') {
+                if (transcript.includes("partido"))       { socket.emit('cambiar-modo', 'MODO PARTIDO'); }
+                else if (transcript.includes("entrenamiento")) { socket.emit('cambiar-modo', 'MODO ENTRENAMIENTO'); }
+                // En lobby no se acepta nada más
+                return;
+            }
+
+            // ── MODO PARTIDO ───────────────────────────────────────────────────
+            if (modoActual === 'MODO PARTIDO') {
+                // Definir saque (solo si aún no se ha definido)
+                if (!saqueDefinido) {
+                    if (transcript === "yo"    || transcript.includes(" yo"))    { socket.emit('definir-saque', 'yo');    return; }
+                    if (transcript === "rival" || transcript.includes("rival"))  { socket.emit('definir-saque', 'rival'); return; }
+                    if (transcript === "rafa"  || transcript.includes("rafa") || transcript.includes("nadal")) {
+                        socket.emit('definir-saque', 'Nadal'); return;
+                    }
                 }
+
+                // Deshacer punto
+                if (transcript.includes("deshacer")) { socket.emit('deshacer-punto'); return; }
+
+                // Salir (con confirmación de doble "salir")
+                if (transcript.includes("salir") || transcript.includes("volver")) {
+                    if (!esperandoConfirmacionSalir) {
+                        esperandoConfirmacionSalir = true;
+                        socket.emit('solicitar-confirmacion-salir');
+                        if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
+                        timeoutConfirmacion = setTimeout(() => {
+                            esperandoConfirmacionSalir = false;
+                        }, 10000);
+                    } else {
+                        // Segunda confirmación con "salir"
+                        if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
+                        esperandoConfirmacionSalir = false;
+                        socket.emit('resetear-a-inicio');
+                    }
+                    return;
+                }
+
+                // Confirmación explícita sí/no tras pedir salir
+                if (esperandoConfirmacionSalir) {
+                    if (transcript.includes("si")) {
+                        if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
+                        esperandoConfirmacionSalir = false;
+                        socket.emit('resetear-a-inicio');
+                    } else if (transcript.includes("no")) {
+                        if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
+                        esperandoConfirmacionSalir = false;
+                    }
+                    return;
+                }
+
+                // En modo partido NO se aceptan comandos de entrenamiento
+                // (partido, entrenamiento, fondo, saque como submodo, línea → ignorados)
+                return;
             }
-            else if (esperandoConfirmacionSalir && transcript.includes("si")) {
-                if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
-                esperandoConfirmacionSalir = false;
-                socket.emit('resetear-a-inicio');
-            }
-            else if (esperandoConfirmacionSalir && transcript.includes("no")) {
-                if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
-                esperandoConfirmacionSalir = false;
-                // Opcional: Feedback de cancelación
-            }
-            else if (transcript.includes("silenciar")) { socket.emit('alternar-audio', true); }
-            else if (transcript.includes("activar")) { socket.emit('alternar-audio', false); }
-            else if (transcript.includes("fondo")) { socket.emit('cambiar-submodo', 'FONDO'); }
-            else if (transcript.includes("saque")) { socket.emit('cambiar-submodo', 'SAQUE'); }
-            else if (transcript.includes("línea")) { socket.emit('cambiar-submodo', 'LINEA'); }
-            else if (transcript.includes("reiniciar")) { socket.emit('reiniciar-drill'); }
-            else if (transcript.includes("cancelar") || transcript.includes("deshacer")) { socket.emit('deshacer-punto'); }
-            else if (modoActual === 'MODO PARTIDO' && !saqueDefinido) {
-                if (transcript === "yo" || transcript.includes(" yo")) { socket.emit('definir-saque', 'yo'); }
-                else if (transcript === "rival" || transcript.includes("rival")) { socket.emit('definir-saque', 'rival'); }
-                else if (transcript === "rafa" || transcript.includes("rafa") || transcript.includes("nadal")) { socket.emit('definir-saque', 'Nadal'); }
+
+            // ── MODO ENTRENAMIENTO ─────────────────────────────────────────────
+            if (modoActual === 'MODO ENTRENAMIENTO') {
+                // Submodos: solo si NO hay uno activo todavía, o siempre para cambiar
+                if (transcript.includes("fondo")) {
+                    if (!currentSubModo || currentSubModo === 'FONDO') {
+                        socket.emit('cambiar-submodo', 'FONDO');
+                    }
+                    return;
+                }
+                if (transcript.includes("línea") || transcript.includes("linea")) {
+                    if (!currentSubModo || currentSubModo === 'LINEA') {
+                        socket.emit('cambiar-submodo', 'LINEA');
+                    }
+                    return;
+                }
+                // "saque" como submodo (cuidado: no confundir con definir saque de partido)
+                if (transcript.includes("saque")) {
+                    if (!currentSubModo || currentSubModo === 'SAQUE') {
+                        socket.emit('cambiar-submodo', 'SAQUE');
+                    }
+                    return;
+                }
+
+                // Reiniciar drill
+                if (transcript.includes("reiniciar")) { socket.emit('reiniciar-drill'); return; }
+
+                // Salir: si hay submodo activo, cierra el submodo; si no, vuelve al lobby
+                if (transcript.includes("salir") || transcript.includes("volver")) {
+                    if (currentSubModo) {
+                        socket.emit('cambiar-submodo', null); // Vuelve a selección dentro de entrenamiento
+                    } else {
+                        socket.emit('resetear-a-inicio'); // Vuelve al lobby
+                    }
+                    return;
+                }
+
+                // En entrenamiento NO se acepta "partido" ni comandos de partido
+                return;
             }
         };
         recognition.start();
