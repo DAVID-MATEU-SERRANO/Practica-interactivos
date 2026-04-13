@@ -359,6 +359,7 @@ function registrarGolpeTenis(now) {
     }
 
     currentPointStrokes.push({ ...lastStrokeMetrics });
+    socket.emit('nuevo-golpe', lastStrokeMetrics);
 }
 
 function capturarMetricas() {
@@ -438,7 +439,7 @@ function capturarMetricas() {
     }
 
     // Escalar potencia para ampliar diferencias perceptuales (v11: FULL TURBO - Exp 2.3 * 1.5)
-    const powerScaled = (Math.pow(power, 2.3) * 1.5).toFixed(1);
+    const powerScaled = (Math.pow(power, 2.3) * 0.25).toFixed(1);
 
     lastStrokeMetrics = {
         power: powerScaled,
@@ -515,11 +516,11 @@ function activarVoz() {
 
             // ── COMANDOS GLOBALES (funcionan siempre) ──────────────────────────
             if (transcript.includes("silenciar")) { socket.emit('alternar-audio', true); return; }
-            if (transcript.includes("activar"))   { socket.emit('alternar-audio', false); return; }
+            if (transcript.includes("activar")) { socket.emit('alternar-audio', false); return; }
 
             // ── DESDE LOBBY: únicos comandos válidos para cambiar de modo ──────
             if (modoActual === '' || modoActual === 'LOBBY') {
-                if (transcript.includes("partido"))       { socket.emit('cambiar-modo', 'MODO PARTIDO'); }
+                if (transcript.includes("partido")) { socket.emit('cambiar-modo', 'MODO PARTIDO'); }
                 else if (transcript.includes("entrenamiento")) { socket.emit('cambiar-modo', 'MODO ENTRENAMIENTO'); }
                 // En lobby no se acepta nada más
                 return;
@@ -529,9 +530,9 @@ function activarVoz() {
             if (modoActual === 'MODO PARTIDO') {
                 // Definir saque (solo si aún no se ha definido)
                 if (!saqueDefinido) {
-                    if (transcript === "yo"    || transcript.includes(" yo"))    { socket.emit('definir-saque', 'yo');    return; }
-                    if (transcript === "rival" || transcript.includes("rival"))  { socket.emit('definir-saque', 'rival'); return; }
-                    if (transcript === "rafa"  || transcript.includes("rafa") || transcript.includes("nadal")) {
+                    if (transcript === "yo" || transcript.includes(" yo")) { socket.emit('definir-saque', 'yo'); return; }
+                    if (transcript === "rival" || transcript.includes("rival")) { socket.emit('definir-saque', 'rival'); return; }
+                    if (transcript === "rafa" || transcript.includes("rafa") || transcript.includes("nadal")) {
                         socket.emit('definir-saque', 'Nadal'); return;
                     }
                 }

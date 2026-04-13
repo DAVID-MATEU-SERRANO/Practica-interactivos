@@ -126,6 +126,8 @@ io.on('connection', (socket) => {
             metrics = payload.metrics;
         }
 
+        console.log(`\n[PUNTO] Ganador: ${quien} | Motivo: ${metrics.motivo || 'N/A'}`);
+
         // Guardar el punto en las estadísticas
         matchStats.points.push({
             winner: quien,
@@ -136,6 +138,11 @@ io.on('connection', (socket) => {
 
         // Notificar a todos los dispositivos (especialmente al Dashboard) con el payload completo
         io.emit('punto-registrado', payload);
+    });
+
+    // Evento para recibir debug de golpes en tiempo real
+    socket.on('nuevo-golpe', (data) => {
+        console.log(`[GOLPE] Tipo: ${data.trajectory} (${data.side}) | Potencia: ${data.power}`);
     });
 
     // Evento para deshacer el último punto anotado
