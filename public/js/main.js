@@ -98,7 +98,7 @@ let serveInProgress = false;    // Para saber cuándo se está realizando un saq
 let tmModel = null;
 let isTMModelLoading = false;
 let isProcessingTM = false; // Semáforo para evitar sobrecarga de predicciones
-const TM_MODEL_URL = "https://teachablemachine.withgoogle.com/models/RexvBpOpyS/"; // URL remota del usuario
+const TM_MODEL_URL = "https://teachablemachine.withgoogle.com/models/tBz8aUiIP/"; // URL remota del usuario
 let lastFeedbackTime = 0; // Para cooldown de voz
 
 async function cargarModeloLinea() {
@@ -136,7 +136,7 @@ function reiniciarDrill() {
 // --- SINCRONIZACIÓN DE AUDIO ---
 socket.on('audio-actualizado', (silenciar) => {
     partido.estaSilenciado = silenciar;
-    
+
     const muteIndicator = document.getElementById('mute-indicator');
     if (muteIndicator) {
         muteIndicator.style.display = silenciar ? 'flex' : 'none';
@@ -220,7 +220,7 @@ function resetEstadoPartido() {
         document.getElementById("nombre-yo").innerHTML = 'YO <span class="pelota-saque" id="saque-yo" style="visibility: hidden;">🎾</span>';
         uiSaque.yo = document.getElementById('saque-yo');
     }
-    
+
     // Detener vídeo de Nadal si estuviera corriendo
     if (nadalOverlay) {
         nadalOverlay.style.display = 'none';
@@ -270,7 +270,7 @@ function reconstruirPartido(stats) {
     socket.emit('sync-games', partido.gameHistory);
 
     actualizarMarcadorUI();
-    
+
     // Al finalizar la re-construcción, verificamos el DOM para reflejar el estado correcto (ej. si quedó en descanso de pista)
     setTimeout(() => verificarCambioPista(), 0);
 }
@@ -413,7 +413,7 @@ function procesarPunto(payload, silent = false) {
                 if ((partido.games[0] + partido.games[1]) % 2 !== 0) esCambio = true;
             }
         }
-        
+
         const esDescanso = (partido.isTieBreak || (partido.puntos[0] === 0 && partido.puntos[1] === 0));
         if (esCambio && esDescanso) {
             const setRecienTerminado = (partido.games[0] === 0 && partido.games[1] === 0 && partido.matchHistory.length > 0 && !partido.isTieBreak);
@@ -492,7 +492,7 @@ function ganarJuego(w) {
         duracion: duracionJuego,
         setIndex: partido.currentSetIndex
     };
-    
+
     if (!isReplaying) {
         socket.emit('registrar-fin-juego', payload);
     }
@@ -961,7 +961,7 @@ function hablar(mensaje) {
 
 function dibujarPantallaSeleccionEntrenamiento() {
     if (!ctxEntrenamiento) return;
-    
+
     // Asegurar dimensiones
     if (canvasEntrenamiento.offsetWidth > 0) {
         canvasEntrenamiento.width = canvasEntrenamiento.offsetWidth;
@@ -1291,7 +1291,7 @@ socket.on('submodo-actualizado', (submodo) => {
         document.getElementById('training-title').innerText = "ENTRENAMIENTO";
         hablar("Volviendo a la selección de entrenamiento. Diga Fondo, Saque o Línea para comenzar una serie.");
         dibujarPantallaSeleccionEntrenamiento();
-        
+
         // Ocultar extras al volver a selección
         if (angleDisplay) angleDisplay.style.display = 'none';
         if (trainingTipsContainer) trainingTipsContainer.style.display = 'none';
