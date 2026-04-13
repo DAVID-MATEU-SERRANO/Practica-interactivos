@@ -108,7 +108,8 @@ socket.on('modo-actualizado', (modo) => {
     if (modo === 'MODO PARTIDO') {
         stopTraining();
     } else if (modo === 'MODO ENTRENAMIENTO') {
-        startTraining();
+        // No iniciamos la cámara aquí. Esperamos a que se seleccione un submodo
+        // para saber qué cámara encender (frontal o trasera).
     } else {
         // Reset de estados internos al volver al Lobby
         saqueDefinido = false;
@@ -667,10 +668,12 @@ function stopTraining() {
     if (webcamRunning) {
         if (requestID) cancelAnimationFrame(requestID);
         requestID = null;
-        const stream = videoElement.srcObject;
-        const tracks = stream.getTracks();
-        tracks.forEach(track => track.stop());
-        videoElement.srcObject = null;
+        if (videoElement.srcObject) {
+            const stream = videoElement.srcObject;
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+            videoElement.srcObject = null;
+        }
         webcamRunning = false;
     }
 }
