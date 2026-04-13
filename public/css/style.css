@@ -879,29 +879,57 @@ body.stats-visible .voice-hint.bottom-right {
 
 .stat-row-metrics {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
+    gap: 16px;
     margin-bottom: 32px;
-    padding: 24px;
-    background: rgba(56, 189, 248, 0.1);
-    border-radius: 20px;
+    padding: 28px 20px;
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.15);
+    border-radius: 24px;
 }
 
 .mini-stat {
+    flex: 1;
     text-align: center;
+    position: relative;
+}
+
+.mini-stat:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 20%;
+    height: 60%;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .mini-stat .label {
     display: block;
-    font-size: 0.8rem;
-    color: #94a3b8;
-    margin-bottom: 8px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
     text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
 }
 
 .mini-stat .value {
-    font-size: 2.2rem;
+    font-size: 2rem;
     font-weight: 800;
     font-family: 'Outfit', sans-serif;
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+}
+
+.mini-stat .value .delta {
+    display: block;
+    font-size: 0.85rem;
+    margin-top: 4px;
+    font-weight: 700;
 }
 
 .stat-max-power {

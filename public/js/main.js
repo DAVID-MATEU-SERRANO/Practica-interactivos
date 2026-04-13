@@ -653,9 +653,12 @@ function calcularEstadisticas(rangoPuntos) {
 
         // Saque
         if (p.ganador === 'yo') {
-            if (m.motivo === 'Winner' && m.strokes && m.strokes.length === 1 && m.strokes[0].trajectory.includes('SAQUE')) {
-                stats.serves.aces++;
-            }
+            const esAce = m.motivo === 'Winner'
+                && m.strokes
+                && m.strokes.length > 0
+                && m.strokes.some(s => s.trajectory?.includes('SAQUE'))
+                && !m.strokes.some(s => !s.trajectory?.includes('SAQUE'));
+            if (esAce) stats.serves.aces++;
         }
         if (p.ganador === 'rival' && m.motivo === 'Doble Falta') {
             stats.serves.doubleFaults++;
@@ -767,9 +770,16 @@ function mostrarEstadisticas(titulo) {
     // --- Helper para Deltas ---
     const getDelta = (curr, baseline) => {
         const b = parseFloat(baseline);
-        if (!b || isNaN(b) || !isFinite(b)) return 0;
         const c = parseFloat(curr) || 0;
-        return ((c - b) / b * 100).toFixed(0);
+
+        // Si el baseline es 0 pero hay valor actual, es un incremento infinito pero lo mostramos como 100% de tendencia positiva
+        if (!b || isNaN(b) || !isFinite(b)) {
+            return c > 0 ? 100 : 0;
+        }
+
+        const res = ((c - b) / b * 100);
+        // Devolvemos 1 decimal si el cambio es pequeño, sino redondeado
+        return Math.abs(res) < 10 && res !== 0 ? res.toFixed(1) : res.toFixed(0);
     };
 
     const getDeltaAbs = (curr, baseline) => {
@@ -781,11 +791,12 @@ function mostrarEstadisticas(titulo) {
 
     const formatDelta = (delta, inverse = false) => {
         const numDelta = parseFloat(delta);
-        if (isNaN(numDelta) || numDelta === 0) return `<small class="delta">(0%)</small>`;
+        if (isNaN(numDelta) || numDelta === 0) return ""; // No mostrar si es 0 exacto o inválido
+
         let colorClass = "";
         if (numDelta > 0) colorClass = inverse ? 'negative' : 'positive';
         else if (numDelta < 0) colorClass = inverse ? 'positive' : 'negative';
-        // Quitamos la terminación .0 visualmente si existe
+
         let displayDelta = delta.toString().replace(/\.0$/, '');
         return `<small class="delta ${colorClass}">(${numDelta > 0 ? '+' : ''}${displayDelta}%)</small>`;
     };
@@ -831,25 +842,31 @@ function mostrarEstadisticas(titulo) {
     const firstServePct = statsCurrent.serves.firstTotal > 0 ? (statsCurrent.serves.firstIn / statsCurrent.serves.firstTotal * 100).toFixed(0) : 0;
     let serveDeltaHTML = "";
     if (statsBaseline && statsBaseline.serves.firstTotal > 0) {
-        const globServePct = (statsBaseline.serves.firstIn / statsBaseline.serves.firstTotal * 100).toFixed(0);
-        serveDeltaHTML = formatDelta(getDeltaAbs(firstServePct, globServePct), false);
+        const currP = parseFloat(firstServePct);
+        const baselineP = (statsBaseline.serves.firstIn / statsBaseline.serves.firstTotal * 100);
+        // Para porcentajes (1er saque) seguimos usando diferencia absoluta (puntos porcentuales) porque es lo estándar en tenis
+        const diff = (currP - baselineP).toFixed(1).replace(/\.0$/, '');
+        if (diff !== "0") {
+            serveDeltaHTML = `<small class="delta ${diff > 0 ? 'positive' : 'negative'}">(${diff > 0 ? '+' : ''}${diff}%)</small>`;
+        }
     }
-    // We update innerHTML for first-serve to include the delta HTML inline
     document.getElementById('stat-first-serve').innerHTML = `${firstServePct}% ${serveDeltaHTML}`;
 
+    // Aces (Normalizado por puntos para comparar volumen relativo)
     let acesDeltaHTML = "";
-    if (statsBaseline && statsBaseline.serves.firstTotal > 0) {
-        const currAceRate = statsCurrent.serves.firstTotal > 0 ? (statsCurrent.serves.aces / statsCurrent.serves.firstTotal * 100).toFixed(1) : 0;
-        const globAceRate = (statsBaseline.serves.aces / statsBaseline.serves.firstTotal * 100).toFixed(1);
-        acesDeltaHTML = formatDelta(getDeltaAbs(currAceRate, globAceRate), false);
+    if (statsBaseline) {
+        const normalizationFactor = (baselinePoints.length / (currentPoints.length || 1)) || 1;
+        const normalizedBaselineAces = statsBaseline.serves.aces / normalizationFactor;
+        acesDeltaHTML = formatDelta(getDelta(statsCurrent.serves.aces, normalizedBaselineAces), false);
     }
     document.getElementById('stat-aces').innerHTML = `${statsCurrent.serves.aces} ${acesDeltaHTML}`;
 
+    // Doble Falta
     let dfDeltaHTML = "";
-    if (statsBaseline && statsBaseline.serves.firstTotal > 0) {
-        const currDFRate = statsCurrent.serves.firstTotal > 0 ? (statsCurrent.serves.doubleFaults / statsCurrent.serves.firstTotal * 100).toFixed(1) : 0;
-        const globDFRate = (statsBaseline.serves.doubleFaults / statsBaseline.serves.firstTotal * 100).toFixed(1);
-        dfDeltaHTML = formatDelta(getDeltaAbs(currDFRate, globDFRate), true);
+    if (statsBaseline) {
+        const normalizationFactor = (baselinePoints.length / (currentPoints.length || 1)) || 1;
+        const normalizedBaselineDF = statsBaseline.serves.doubleFaults / normalizationFactor;
+        dfDeltaHTML = formatDelta(getDelta(statsCurrent.serves.doubleFaults, normalizedBaselineDF), true);
     }
     document.getElementById('stat-double-faults').innerHTML = `${statsCurrent.serves.doubleFaults} ${dfDeltaHTML}`;
 
