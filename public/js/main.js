@@ -100,6 +100,7 @@ let isTMModelLoading = false;
 let isProcessingTM = false; // Semáforo para evitar sobrecarga de predicciones
 const TM_MODEL_URL = "https://teachablemachine.withgoogle.com/models/tBz8aUiIP/"; // URL remota del usuario
 let lastFeedbackTime = 0; // Para cooldown de voz
+let lastLineState = null; // Cache del último estado del modo LÍNEA: null | 'PISANDO' | 'PERFECTO'
 
 async function cargarModeloLinea() {
     if (tmModel || isTMModelLoading) return;
@@ -988,12 +989,20 @@ function dibujarPantallaSeleccionEntrenamiento() {
     ctxEntrenamiento.textAlign = "start"; // Reset
 }
 
-// Variable para guardar el último frame recibido
+// Variable para guardar el último frame recibido (siempre contiene una imagen lista)
 let ultimoFrameVideo = new Image();
 
 socket.on('render-video', (frameData) => {
-    ultimoFrameVideo.src = frameData;
+    // Doble buffer: cargar en una imagen temporal y sólo actualizar
+    // ultimoFrameVideo cuando esté completamente decodificada.
+    // Así drawImage nunca recibe una imagen a medio cargar → sin parpadeo.
+    const tmpImg = new Image();
+    tmpImg.onload = () => {
+        ultimoFrameVideo = tmpImg;
+    };
+    tmpImg.src = frameData;
 });
+
 
 // Función auxiliar para obtener visibilidad de forma robusta
 function getVisibility(p) {
@@ -1210,16 +1219,36 @@ socket.on('training-data', (data) => {
         txtAngulo.innerText = "--";
     } else if (subModoTraining === 'LINEA') {
         // --- MODO LÍNEA (TEACHABLE MACHINE) ---
+
+        // 1. Siempre redibujar desde el cache para evitar parpadeo entre predicciones
+        const drawLineState = (state) => {
+            ctxEntrenamiento.textAlign = "center";
+            if (state === 'PISANDO') {
+                ctxEntrenamiento.fillStyle = "rgba(255, 0, 0, 0.3)";
+                ctxEntrenamiento.fillRect(0, 0, canvasEntrenamiento.width, canvasEntrenamiento.height);
+                ctxEntrenamiento.fillStyle = "#ff4444";
+                ctxEntrenamiento.font = "bold 70px Arial";
+                ctxEntrenamiento.fillText("PISANDO L\u00CDNEA", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2);
+            } else if (state === 'PERFECTO') {
+                ctxEntrenamiento.fillStyle = "#00FF00";
+                ctxEntrenamiento.font = "bold 70px Arial";
+                ctxEntrenamiento.fillText("PERFECTO", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2);
+            }
+            ctxEntrenamiento.textAlign = "start";
+        };
+
+        // Dibujar el último estado conocido antes de cualquier predicción nueva
+        if (lastLineState) drawLineState(lastLineState);
+
+        // 2. Lanzar predicción asíncrona (solo si no hay una en vuelo)
         if (tmModel && !isProcessingTM && ultimoFrameVideo.src && ultimoFrameVideo.naturalWidth > 0) {
-            isProcessingTM = true; // Bloquear nuevas predicciones hasta terminar esta
+            isProcessingTM = true;
 
             tmModel.predict(ultimoFrameVideo).then(predictions => {
                 if (subModoTraining !== 'LINEA') {
                     isProcessingTM = false;
                     return;
                 }
-                let isPisando = false;
-                let isPerfecto = false;
 
                 // Determinar la clase más probable
                 let maxProb = 0;
@@ -1232,53 +1261,40 @@ socket.on('training-data', (data) => {
                 });
                 console.log(bestClass);
 
-                if (bestClass.includes("CLASS 2")) {
-                    isPisando = true;
-                } else {
-                    isPerfecto = true; // Asumimos que cualquier otra cosa (clase 2) es "Perfecto"
-                }
+                const isPisando = bestClass.includes("CLASS 2");
+                const newState = isPisando ? 'PISANDO' : 'PERFECTO';
 
-                // Feedback visual gigante
-                ctxEntrenamiento.textAlign = "center";
-                if (isPisando) {
-                    ctxEntrenamiento.fillStyle = "rgba(255, 0, 0, 0.3)";
-                    ctxEntrenamiento.fillRect(0, 0, canvasEntrenamiento.width, canvasEntrenamiento.height);
+                // Solo actualizar el estado en cache. El próximo training-data lo dibujará
+                // de forma síncrona sobre el vídeo ya renderizado, sin parpadeo.
+                lastLineState = newState;
 
-                    ctxEntrenamiento.fillStyle = "#ff4444";
-                    ctxEntrenamiento.font = "bold 70px Arial";
-                    ctxEntrenamiento.fillText("PISANDO LÍNEA", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2);
-                } else if (isPerfecto) {
-                    ctxEntrenamiento.fillStyle = "#00FF00"; // Verde
-                    ctxEntrenamiento.font = "bold 70px Arial";
-                    ctxEntrenamiento.fillText("PERFECTO", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2);
-                }
-                ctxEntrenamiento.textAlign = "start";
 
                 const now = Date.now();
                 if (isPisando && now - lastFeedbackTime > 3000) {
-                    hablar("¡Pie fuera!");
+                    hablar("\u00A1Pie fuera!");
                     lastFeedbackTime = now;
                 }
 
-                isProcessingTM = false; // Liberar semáforo
+                isProcessingTM = false;
             }).catch(err => {
-                console.error("Error en predicción TM:", err);
+                console.error("Error en predicci\u00F3n TM:", err);
                 isProcessingTM = false;
             });
         } else if (!isProcessingTM && isTMModelLoading) {
             ctxEntrenamiento.fillStyle = "white";
             ctxEntrenamiento.font = "20px Arial";
-            ctxEntrenamiento.fillText("Cargando modelo de detección...", 60, 100);
+            ctxEntrenamiento.fillText("Cargando modelo de detecci\u00F3n...", 60, 100);
         } else if (!isProcessingTM && !tmModel) {
             ctxEntrenamiento.fillStyle = "#ff4444";
             ctxEntrenamiento.font = "16px Arial";
-            ctxEntrenamiento.fillText("Error: Asegúrate de tener la carpeta 'my_model' en public/", 40, 100);
+            ctxEntrenamiento.fillText("Error: Aseg\u00FArate de tener la carpeta 'my_model' en public/", 40, 100);
         }
     }
 });
 
 socket.on('submodo-actualizado', (submodo) => {
     subModoTraining = submodo;
+    lastLineState = null; // Resetear cache al cambiar de modo
     reiniciarDrill(); // Resetear al cambiar/salir de modo
 
     if (!submodo) {
