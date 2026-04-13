@@ -577,6 +577,19 @@ function activarVoz() {
 
             // ── MODO ENTRENAMIENTO ─────────────────────────────────────────────
             if (modoActual === 'MODO ENTRENAMIENTO') {
+                // Reiniciar drill (prioridad alta para no ser bloqueado por submodos)
+                if (transcript.includes("reiniciar")) { socket.emit('reiniciar-drill'); return; }
+
+                // Salir/Volver (prioridad alta)
+                if (transcript.includes("salir") || transcript.includes("volver")) {
+                    if (currentSubModo) {
+                        socket.emit('cambiar-submodo', null); // Vuelve a selección dentro de entrenamiento
+                    } else {
+                        socket.emit('resetear-a-inicio'); // Vuelve al lobby
+                    }
+                    return;
+                }
+
                 // Submodos: solo si NO hay uno activo todavía, o siempre para cambiar
                 if (transcript.includes("fondo")) {
                     if (!currentSubModo || currentSubModo === 'FONDO') {
@@ -594,19 +607,6 @@ function activarVoz() {
                 if (transcript.includes("saque")) {
                     if (!currentSubModo || currentSubModo === 'SAQUE') {
                         socket.emit('cambiar-submodo', 'SAQUE');
-                    }
-                    return;
-                }
-
-                // Reiniciar drill
-                if (transcript.includes("reiniciar")) { socket.emit('reiniciar-drill'); return; }
-
-                // Salir: si hay submodo activo, cierra el submodo; si no, vuelve al lobby
-                if (transcript.includes("salir") || transcript.includes("volver")) {
-                    if (currentSubModo) {
-                        socket.emit('cambiar-submodo', null); // Vuelve a selección dentro de entrenamiento
-                    } else {
-                        socket.emit('resetear-a-inicio'); // Vuelve al lobby
                     }
                     return;
                 }

@@ -207,6 +207,10 @@ io.on('connection', (socket) => {
 
 
     // --- MODO ENTRENAMIENTO ---
+    socket.on('reiniciar-drill', () => {
+        io.emit('reiniciar-drill');
+    });
+
     socket.on('training-data', (data) => {
         if (data.landmarks) {
         }
