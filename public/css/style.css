@@ -251,7 +251,7 @@ h4,
     width: 98%;
     max-width: 1800px;
     margin: 0 auto;
-    min-height: 85vh;
+    min-height: 80vh;
     transition: all 0.5s ease;
 }
 
@@ -486,6 +486,7 @@ h4,
 /* Focus Mode Adjustments */
 body.match-active {
     background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
+    overflow: hidden;
 }
 
 /* Flash de Gestos */
@@ -677,7 +678,7 @@ body.flash-extremo {
     box-shadow: 0 12px 64px rgba(0, 0, 0, 0.6);
     flex: 1;
     padding: 30px;
-    height: 90vh; /* Ajuste para evitar scroll */
+    height: 80vh; /* Ajuste para evitar scroll */
     text-align: left;
     margin: 0;
     animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1);
