@@ -136,6 +136,14 @@ function reiniciarDrill() {
 // --- SINCRONIZACIÓN DE AUDIO ---
 socket.on('audio-actualizado', (silenciar) => {
     partido.estaSilenciado = silenciar;
+    
+    const muteIndicator = document.getElementById('mute-indicator');
+    if (muteIndicator) {
+        muteIndicator.style.display = silenciar ? 'flex' : 'none';
+        if (silenciar) muteIndicator.classList.add('muted');
+        else muteIndicator.classList.remove('muted');
+    }
+
     if (silenciar) {
         // Un mensaje final antes de callar
         const synth = window.speechSynthesis;

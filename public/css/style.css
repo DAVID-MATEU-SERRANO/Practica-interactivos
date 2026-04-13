@@ -112,7 +112,43 @@ h4,
 
 .btn-premium:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 30px var(--accent-glow);
+    box-shadow: 0 8px 30px rgba(56, 189, 248, 0.4);
+}
+
+/* Status Bar & Global Indicators */
+.status-bar-top {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    z-index: 15000;
+    display: flex;
+    gap: 16px;
+    pointer-events: none;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-radius: 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--error);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.status-badge .icon {
+    font-size: 1.1rem;
+}
+
+.status-badge.muted {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-premium:hover {
     filter: brightness(1.1);
 }
 
