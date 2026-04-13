@@ -631,17 +631,17 @@ body.flash-extremo {
     margin-left: 4px;
 }
 
-/* --- STATS OVERLAY (ahora panel lateral) --- */
 #stats-overlay {
     display: none;
     flex-direction: column;
-    overflow-y: auto;
+    overflow: hidden;
     background: rgba(15, 23, 42, 0.85);
     border-radius: 32px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 12px 64px rgba(0, 0, 0, 0.6);
     flex: 1;
-    padding: 40px;
+    padding: 30px;
+    height: 90vh; /* Ajuste para evitar scroll */
     text-align: left;
     margin: 0;
     animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1);
@@ -661,6 +661,55 @@ body.flash-extremo {
 #stats-overlay.visible {
     display: flex;
 }
+
+/* Ocultar aviso de silenciar mediante clase en el body para evitar solapamientos */
+body.stats-visible .voice-hint.bottom-right {
+    display: none !important;
+}
+
+.stats-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Reducir tamaños para vista compacta sin scroll */
+.stats-column { margin-bottom: 10px; }
+.stats-column h4 { font-size: 0.9rem; margin-bottom: 8px; }
+.stat-item .value { font-size: 1.2rem; }
+.mini-stat .value { font-size: 1.1rem; }
+.mini-stat .label { font-size: 0.65rem; }
+.stat-detail { max-height: 80px; overflow: hidden; font-size: 0.8rem; }
+.stats-footer { margin-top: auto; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
+
+.stats-time-summary {
+    background: rgba(56, 189, 248, 0.05);
+    border: 1px solid rgba(56, 189, 248, 0.1);
+    border-radius: 20px;
+    padding: 16px;
+    margin: 16px 0;
+    text-align: center;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    gap: 15px;
+}
+
+.stats-time-summary .match-time {
+    font-size: 1.05rem;
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.stats-time-summary .match-time span {
+    color: var(--accent);
+    font-weight: 800;
+    margin-left: 6px;
+}
+
+.match-time { font-size: 0.9rem; }
 
 .stats-header {
     display: flex;

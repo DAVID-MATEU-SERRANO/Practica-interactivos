@@ -70,7 +70,10 @@ let partido = {
 // Referencias Stats Overlay
 const statsOverlay = document.getElementById('stats-overlay');
 const btnCloseStats = document.getElementById('close-stats');
-if (btnCloseStats) btnCloseStats.onclick = () => statsOverlay.classList.remove('visible');
+if (btnCloseStats) btnCloseStats.onclick = () => {
+    statsOverlay.classList.remove('visible');
+    document.body.classList.remove('stats-visible');
+};
 
 const labelsPuntos = ["0", "15", "30", "40", "AD"];
 let golpeSeleccionado = 'DERECHA'; // Por defecto
@@ -884,6 +887,7 @@ function mostrarEstadisticas(titulo) {
 
     // Mostrar Overlay
     statsOverlay.classList.add('visible');
+    document.body.classList.add('stats-visible');
 }
 
 // --- SINCRONIZACIÓN DE MODOS ---
