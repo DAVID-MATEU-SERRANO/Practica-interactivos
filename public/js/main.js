@@ -167,7 +167,7 @@ if (btnIniciar) {
                 const qrContainer = document.getElementById("qrcode");
                 qrContainer.innerHTML = ""; // Limpiar previo
                 new QRCode(qrContainer, {
-                    text: mobileUrl, width: 140, height: 140,
+                    text: mobileUrl, width: 200, height: 200,
                     colorDark: "#0f172a", colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.H
                 });

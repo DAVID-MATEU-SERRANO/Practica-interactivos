@@ -55,6 +55,12 @@ h4,
     letter-spacing: -0.03em;
 }
 
+@media (max-width: 768px) {
+    .heading-xl {
+        font-size: 2rem;
+    }
+}
+
 .heading-l {
     font-size: 2.2rem;
     font-weight: 700;
@@ -155,47 +161,49 @@ h4,
 .mode-cards {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
-    width: 90%;
-    max-width: 800px;
+    gap: 48px;
+    width: 95%;
+    max-width: 1200px;
 }
 
 /* Voice Badges en Tarjetas */
 .voice-badge {
     position: absolute;
-    top: -12px;
+    top: -20px;
     left: 50%;
     transform: translateX(-50%);
     background: var(--accent);
     color: var(--bg-dark);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.65rem;
+    padding: 8px 24px;
+    border-radius: 24px;
+    font-size: 0.85rem;
     font-weight: 800;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
     text-transform: uppercase;
-    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+    box-shadow: 0 8px 20px rgba(56, 189, 248, 0.4);
 }
 
 .mode-card {
     position: relative;
-    padding: 40px 30px;
-    border-radius: 24px;
+    padding: 80px 48px;
+    border-radius: 32px;
     text-align: center;
     border: 1px solid var(--glass-border);
     cursor: default;
     overflow: visible;
+    transition: all 0.4s ease;
 }
 
 .mode-card h2 {
-    font-size: 1.5rem;
-    margin-bottom: 12px;
+    font-size: 2.5rem;
+    margin-bottom: 16px;
     color: var(--accent);
+    font-weight: 800;
 }
 
 .mode-card p {
     color: var(--text-muted);
-    font-size: 0.9rem;
+    font-size: 1.25rem;
     line-height: 1.6;
 }
 
@@ -218,6 +226,13 @@ h4,
     align-items: center;
     justify-content: center;
     min-width: 0;
+}
+
+#training-title {
+    font-size: 3.5rem !important; /* Forzado para consistencia en todos los submodos */
+    font-weight: 900;
+    margin: 0;
+    text-shadow: 0 0 20px var(--volt-glow);
 }
 
 /* Marcador Estilo Premium */
@@ -326,12 +341,38 @@ h4,
     border: 1px solid var(--glass-border);
 }
 
+#qr-section {
+    margin-top: 40px;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    border: 2px solid rgba(56, 189, 248, 0.2);
+}
+
+.qr-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.25rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 800;
+    margin: 0;
+}
+
+.qr-desc {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
 #qrcode {
     background: white;
-    padding: 12px;
-    border-radius: 12px;
+    padding: 20px;
+    border-radius: 24px;
     display: inline-block;
-    margin-top: 16px;
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
 }
 
 #qrcode img {
@@ -863,7 +904,14 @@ body.flash-extremo {
 
 /* Nadal Overlay */
 #nadal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20000; /* Por encima de todo, incluyendo .voice-hint (10000) */
     background: black;
+    display: none; /* Controlado por JS, pero definido aquí para consistencia */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     animation: zoomInOverlay 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -881,4 +929,50 @@ body.flash-extremo {
 
 #nadal-video {
     box-shadow: 0 0 50px rgba(56, 189, 248, 0.4);
+}
+
+/* Voice Help / Hints */
+.voice-hint {
+    z-index: 10000;
+    padding: 18px 28px;
+    border-radius: 20px;
+    font-size: 1.15rem;
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(15, 23, 42, 0.4);
+}
+
+.voice-hint.bottom-left {
+    position: fixed;
+    bottom: 30px;
+    left: 30px;
+}
+
+.voice-hint.bottom-right {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+}
+
+.voice-hint b {
+    color: var(--accent);
+    text-shadow: 0 0 15px var(--accent-glow);
+    font-weight: 800;
+}
+
+.voice-hint .hint-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.voice-hint .icon {
+    font-size: 1.6rem;
 }
