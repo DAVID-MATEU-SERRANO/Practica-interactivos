@@ -1218,46 +1218,41 @@ socket.on('training-data', (data) => {
                     isProcessingTM = false;
                     return;
                 }
-                // Dibujar fondo del panel de feedback
-                ctxEntrenamiento.fillStyle = "rgba(0, 0, 0, 0.6)";
-                ctxEntrenamiento.fillRect(20, 20, 350, 150);
-
-                ctxEntrenamiento.fillStyle = "white";
-                ctxEntrenamiento.font = "bold 20px Arial";
-                ctxEntrenamiento.fillText("MODO LÍNEA - CONFIANZA", 40, 50);
-
                 let isPisando = false;
-                let maxY = 80;
+                let isPerfecto = false;
 
-                // Mostrar todas las clases y sus porcentajes
-                predictions.forEach((p, index) => {
-                    const prob = (p.probability * 100).toFixed(1);
-                    const isWinner = p.probability > 0.5;
-
-                    ctxEntrenamiento.fillStyle = isWinner ? "#fbbf24" : "#aaa";
-                    ctxEntrenamiento.font = isWinner ? "bold 18px Arial" : "16px Arial";
-                    ctxEntrenamiento.fillText(`${p.className}: ${prob}%`, 40, maxY + (index * 25));
-
-                    if (p.className.toUpperCase().includes("PISANDO") && p.probability > 0.7) {
-                        isPisando = true;
+                // Determinar la clase más probable
+                let maxProb = 0;
+                let bestClass = "";
+                predictions.forEach(p => {
+                    if (p.probability > maxProb) {
+                        maxProb = p.probability;
+                        bestClass = p.className.toUpperCase();
                     }
                 });
+                console.log(bestClass);
 
-                // Feedback visual gigante si está pisando
+                if (bestClass.includes("CLASS 2")) {
+                    isPisando = true;
+                } else {
+                    isPerfecto = true; // Asumimos que cualquier otra cosa (clase 2) es "Perfecto"
+                }
+
+                // Feedback visual gigante
+                ctxEntrenamiento.textAlign = "center";
                 if (isPisando) {
                     ctxEntrenamiento.fillStyle = "rgba(255, 0, 0, 0.3)";
                     ctxEntrenamiento.fillRect(0, 0, canvasEntrenamiento.width, canvasEntrenamiento.height);
 
                     ctxEntrenamiento.fillStyle = "#ff4444";
-                    ctxEntrenamiento.font = "bold 48px Arial";
-                    ctxEntrenamiento.textAlign = "center";
-                    ctxEntrenamiento.fillText("¡PISANDO LÍNEA!", canvasEntrenamiento.width / 2, canvasEntrenamiento.height - 100);
-                    ctxEntrenamiento.textAlign = "start";
-                } else {
-                    ctxEntrenamiento.fillStyle = "white";
-                    ctxEntrenamiento.font = "16px Arial";
-                    ctxEntrenamiento.fillText("ESTADO: OK", 40, 150);
+                    ctxEntrenamiento.font = "bold 70px Arial";
+                    ctxEntrenamiento.fillText("PISANDO LÍNEA", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2);
+                } else if (isPerfecto) {
+                    ctxEntrenamiento.fillStyle = "#00FF00"; // Verde
+                    ctxEntrenamiento.font = "bold 70px Arial";
+                    ctxEntrenamiento.fillText("PERFECTO", canvasEntrenamiento.width / 2, canvasEntrenamiento.height / 2);
                 }
+                ctxEntrenamiento.textAlign = "start";
 
                 const now = Date.now();
                 if (isPisando && now - lastFeedbackTime > 3000) {
