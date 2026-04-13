@@ -597,22 +597,21 @@ function activarVoz() {
                     return;
                 }
 
-                // Submodos: solo si NO hay uno activo todavía, o siempre para cambiar
                 if (transcript.includes("fondo")) {
-                    if (!currentSubModo || currentSubModo === 'FONDO') {
+                    if (!currentSubModo) {
                         socket.emit('cambiar-submodo', 'FONDO');
                     }
                     return;
                 }
                 if (transcript.includes("línea") || transcript.includes("linea")) {
-                    if (!currentSubModo || currentSubModo === 'LINEA') {
+                    if (!currentSubModo) {
                         socket.emit('cambiar-submodo', 'LINEA');
                     }
                     return;
                 }
                 // "saque" como submodo (cuidado: no confundir con definir saque de partido)
                 if (transcript.includes("saque")) {
-                    if (!currentSubModo || currentSubModo === 'SAQUE') {
+                    if (!currentSubModo) {
                         socket.emit('cambiar-submodo', 'SAQUE');
                     }
                     return;

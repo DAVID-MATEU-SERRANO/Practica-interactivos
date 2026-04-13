@@ -175,7 +175,6 @@ io.on('connection', (socket) => {
         saveStats();
     });
 
-    // Evento para cambiar el sub-modo de entrenamiento (Fondo/Saque/Linea)
     socket.on('cambiar-submodo', (submodo) => {
         // Solo se puede saltar a un submodo si no hay ninguno activo,
         // o si se está saliendo (submodo === null)
@@ -183,6 +182,7 @@ io.on('connection', (socket) => {
             console.warn(`⛔ Cambio de submodo rechazado: ${subModoActual} → ${submodo} (pasa por null primero)`);
             return;
         }
+        if (submodo === subModoActual) return; // Evitar reenviar el mismo estado y crear bucle
         subModoActual = submodo;
         io.emit('submodo-actualizado', submodo);
     });
