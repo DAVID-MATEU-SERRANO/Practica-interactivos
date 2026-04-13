@@ -2,23 +2,10 @@
   "points": [
     {
       "winner": "yo",
-      "timestamp": 1776101533011,
+      "timestamp": 1776105225409,
       "strokes": [
         {
-          "power": "2.2",
-          "trajectory": "1er SAQUE",
-          "side": "REVÉS"
-        }
-      ],
-      "duracion_punto": "3.0s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101536185,
-      "strokes": [
-        {
-          "power": "2.5",
+          "power": "1.6",
           "trajectory": "1er SAQUE",
           "side": "REVÉS"
         }
@@ -28,101 +15,11 @@
     },
     {
       "winner": "yo",
-      "timestamp": 1776101540178,
-      "strokes": [
-        {
-          "power": "1.2",
-          "trajectory": "1er SAQUE",
-          "side": "REVÉS"
-        },
-        {
-          "power": "11.3",
-          "trajectory": "Topspin (Liftado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "3.3s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101545605,
+      "timestamp": 1776105229094,
       "strokes": [
         {
           "power": "2.0",
           "trajectory": "1er SAQUE",
-          "side": "REVÉS"
-        },
-        {
-          "power": "12.7",
-          "trajectory": "Topspin (Liftado)",
-          "side": "DERECHA"
-        },
-        {
-          "power": "2.7",
-          "trajectory": "Plano",
-          "side": "REVÉS"
-        }
-      ],
-      "duracion_punto": "4.6s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101551107,
-      "strokes": [
-        {
-          "power": "1.8",
-          "trajectory": "Plano",
-          "side": "REVÉS"
-        }
-      ],
-      "duracion_punto": "2.5s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101557070,
-      "strokes": [
-        {
-          "power": "2.2",
-          "trajectory": "Plano",
-          "side": "REVÉS"
-        },
-        {
-          "power": "2.0",
-          "trajectory": "Plano",
-          "side": "REVÉS"
-        },
-        {
-          "power": "5.0",
-          "trajectory": "Topspin (Liftado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "4.8s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101561579,
-      "strokes": [
-        {
-          "power": "1.3",
-          "trajectory": "Plano",
-          "side": "REVÉS"
-        }
-      ],
-      "duracion_punto": "3.2s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101565061,
-      "strokes": [
-        {
-          "power": "1.4",
-          "trajectory": "Plano",
           "side": "REVÉS"
         }
       ],
@@ -131,195 +28,11 @@
     },
     {
       "winner": "yo",
-      "timestamp": 1776101568953,
+      "timestamp": 1776105231858,
       "strokes": [
         {
           "power": "1.7",
           "trajectory": "1er SAQUE",
-          "side": "REVÉS"
-        }
-      ],
-      "duracion_punto": "2.5s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101572025,
-      "strokes": [
-        {
-          "power": "1.8",
-          "trajectory": "1er SAQUE",
-          "side": "REVÉS"
-        }
-      ],
-      "duracion_punto": "2.3s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101579602,
-      "strokes": [
-        {
-          "power": "2.1",
-          "trajectory": "1er SAQUE",
-          "side": "REVÉS"
-        },
-        {
-          "power": "6.2",
-          "trajectory": "Topspin (Liftado)",
-          "side": "DERECHA"
-        },
-        {
-          "power": "2.7",
-          "trajectory": "Plano",
-          "side": "REVÉS"
-        },
-        {
-          "power": "1.4",
-          "trajectory": "Topspin (Liftado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "6.7s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101717230,
-      "strokes": [
-        {
-          "power": "7.5",
-          "trajectory": "1er SAQUE",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.6s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101720302,
-      "strokes": [
-        {
-          "power": "1.8",
-          "trajectory": "Slice (Cortado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.3s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101723169,
-      "strokes": [
-        {
-          "power": "2.5",
-          "trajectory": "Slice (Cortado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.1s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101726446,
-      "strokes": [
-        {
-          "power": "3.1",
-          "trajectory": "Plano",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.0s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101730747,
-      "strokes": [
-        {
-          "power": "2.2",
-          "trajectory": "Slice (Cortado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.2s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101733816,
-      "strokes": [
-        {
-          "power": "2.0",
-          "trajectory": "1er SAQUE",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.1s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101736887,
-      "strokes": [
-        {
-          "power": "1.5",
-          "trajectory": "1er SAQUE",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.2s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101739759,
-      "strokes": [
-        {
-          "power": "1.7",
-          "trajectory": "1er SAQUE",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.3s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101743035,
-      "strokes": [
-        {
-          "power": "2.9",
-          "trajectory": "1er SAQUE",
-          "side": "REVÉS"
-        }
-      ],
-      "duracion_punto": "2.3s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101795387,
-      "strokes": [
-        {
-          "power": "1.3",
-          "trajectory": "Slice (Cortado)",
-          "side": "REVÉS"
-        }
-      ],
-      "duracion_punto": "2.3s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101798149,
-      "strokes": [
-        {
-          "power": "1.6",
-          "trajectory": "Plano",
           "side": "REVÉS"
         }
       ],
@@ -328,487 +41,100 @@
     },
     {
       "winner": "rival",
-      "timestamp": 1776101801098,
-      "strokes": [],
-      "duracion_punto": "4.9s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "rival",
-      "timestamp": 1776101804271,
-      "strokes": [],
-      "duracion_punto": "8.0s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101807343,
+      "timestamp": 1776105246092,
       "strokes": [
         {
           "power": "1.9",
-          "trajectory": "Topspin (Liftado)",
+          "trajectory": "1er SAQUE",
           "side": "REVÉS"
-        }
-      ],
-      "duracion_punto": "2.3s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "rival",
-      "timestamp": 1776101810615,
-      "strokes": [],
-      "duracion_punto": "5.6s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101814716,
-      "strokes": [
+        },
+        {
+          "power": "1.9",
+          "trajectory": "Plano",
+          "side": "DERECHA"
+        },
+        {
+          "power": "3.0",
+          "trajectory": "Slice (Cortado)",
+          "side": "DERECHA"
+        },
         {
           "power": "1.3",
           "trajectory": "Plano",
-          "side": "REVÉS"
-        }
-      ],
-      "duracion_punto": "2.8s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "rival",
-      "timestamp": 1776101818812,
-      "strokes": [],
-      "duracion_punto": "6.9s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101824546,
-      "strokes": [
+          "side": "DERECHA"
+        },
         {
-          "power": "3.6",
-          "trajectory": "Plano",
+          "power": "4.5",
+          "trajectory": "Slice (Cortado)",
           "side": "REVÉS"
-        }
-      ],
-      "duracion_punto": "2.9s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101828642,
-      "strokes": [
+        },
         {
-          "power": "1.3",
+          "power": "2.3",
+          "trajectory": "Slice (Cortado)",
+          "side": "REVÉS"
+        },
+        {
+          "power": "1.9",
           "trajectory": "Slice (Cortado)",
           "side": "DERECHA"
         }
       ],
-      "duracion_punto": "2.6s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101852395,
-      "strokes": [
-        {
-          "power": "1.7",
-          "trajectory": "Topspin (Liftado)",
-          "side": "REVÉS"
-        }
-      ],
-      "duracion_punto": "2.6s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101857309,
-      "strokes": [
-        {
-          "power": "4.0",
-          "trajectory": "Topspin (Liftado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "3.9s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101860279,
-      "strokes": [
-        {
-          "power": "1.6",
-          "trajectory": "Topspin (Liftado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.4s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101866728,
-      "strokes": [
-        {
-          "power": "3.8",
-          "trajectory": "Slice (Cortado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "4.5s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101872668,
-      "strokes": [
-        {
-          "power": "2.2",
-          "trajectory": "1er SAQUE",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "5.1s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101876149,
-      "strokes": [
-        {
-          "power": "2.4",
-          "trajectory": "1er SAQUE",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.4s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101879015,
-      "strokes": [
-        {
-          "power": "2.5",
-          "trajectory": "1er SAQUE",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.3s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101882702,
-      "strokes": [
-        {
-          "power": "1.8",
-          "trajectory": "1er SAQUE",
-          "side": "REVÉS"
-        }
-      ],
-      "duracion_punto": "2.7s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "rival",
-      "timestamp": 1776101887206,
-      "strokes": [],
-      "duracion_punto": "7.2s",
+      "duracion_punto": "12.4s",
       "motivo": "Fallo Mío"
     },
     {
       "winner": "yo",
-      "timestamp": 1776101890483,
-      "strokes": [
-        {
-          "power": "2.1",
-          "trajectory": "Topspin (Liftado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.2s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101893964,
-      "strokes": [
-        {
-          "power": "2.5",
-          "trajectory": "Topspin (Liftado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.2s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101897293,
-      "strokes": [
-        {
-          "power": "2.2",
-          "trajectory": "Topspin (Liftado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.2s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101900927,
-      "strokes": [
-        {
-          "power": "2.4",
-          "trajectory": "Topspin (Liftado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.5s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101905227,
+      "timestamp": 1776105257971,
       "strokes": [
         {
           "power": "2.0",
-          "trajectory": "1er SAQUE",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.5s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101908196,
-      "strokes": [
-        {
-          "power": "2.0",
-          "trajectory": "1er SAQUE",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.2s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101911268,
-      "strokes": [
-        {
-          "power": "1.7",
-          "trajectory": "1er SAQUE",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.3s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101918747,
-      "strokes": [],
-      "duracion_punto": "9.6s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101922224,
-      "strokes": [
-        {
-          "power": "3.1",
-          "trajectory": "Plano",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.4s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101925499,
-      "strokes": [
-        {
-          "power": "3.2",
-          "trajectory": "Plano",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.4s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101928981,
-      "strokes": [
-        {
-          "power": "1.4",
-          "trajectory": "Topspin (Liftado)",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.6s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101932258,
-      "strokes": [
-        {
-          "power": "1.9",
-          "trajectory": "Plano",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.5s",
-      "motivo": "Fallo Rival"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101939629,
-      "strokes": [
-        {
-          "power": "2.4",
           "trajectory": "1er SAQUE",
           "side": "DERECHA"
         },
         {
-          "power": "5.8",
+          "power": "3.9",
           "trajectory": "Plano",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "5.0s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101943725,
-      "strokes": [
+          "side": "REVÉS"
+        },
         {
-          "power": "3.1",
-          "trajectory": "1er SAQUE",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.9s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101947104,
-      "strokes": [
+          "power": "3.7",
+          "trajectory": "Slice (Cortado)",
+          "side": "REVÉS"
+        },
         {
-          "power": "3.1",
-          "trajectory": "1er SAQUE",
-          "side": "DERECHA"
-        }
-      ],
-      "duracion_punto": "2.5s",
-      "motivo": "Winner"
-    },
-    {
-      "winner": "yo",
-      "timestamp": 1776101950688,
-      "strokes": [
+          "power": "8.8",
+          "trajectory": "Plano",
+          "side": "REVÉS"
+        },
         {
-          "power": "3.0",
-          "trajectory": "1er SAQUE",
-          "side": "DERECHA"
+          "power": "6.7",
+          "trajectory": "Plano",
+          "side": "REVÉS"
+        },
+        {
+          "power": "6.0",
+          "trajectory": "Plano",
+          "side": "REVÉS"
+        },
+        {
+          "power": "4.4",
+          "trajectory": "Plano",
+          "side": "REVÉS"
         }
       ],
-      "duracion_punto": "2.6s",
-      "motivo": "Winner"
+      "duracion_punto": "10.9s",
+      "motivo": "Fallo Rival"
     }
   ],
   "games": [
     {
+      "timestamp": 1776105257974,
       "ganador": "yo",
       "marcador": "1-0",
-      "duracion": 0,
+      "duracion": 46,
       "setIndex": 0
-    },
-    {
-      "ganador": "yo",
-      "marcador": "2-0",
-      "duracion": 0,
-      "setIndex": 0
-    },
-    {
-      "timestamp": 1776101717233,
-      "ganador": "yo",
-      "marcador": "3-0",
-      "duracion": 22,
-      "setIndex": 0
-    },
-    {
-      "timestamp": 1776101730749,
-      "ganador": "yo",
-      "marcador": "4-0",
-      "duracion": 13,
-      "setIndex": 0
-    },
-    {
-      "timestamp": 1776101743040,
-      "ganador": "yo",
-      "marcador": "5-0",
-      "duracion": 12,
-      "setIndex": 0
-    },
-    {
-      "timestamp": 1776101828644,
-      "ganador": "yo",
-      "marcador": "6-0",
-      "duracion": 85,
-      "setIndex": 0
-    },
-    {
-      "timestamp": 1776101866732,
-      "ganador": "yo",
-      "marcador": "1-0",
-      "duracion": 38,
-      "setIndex": 1
-    },
-    {
-      "timestamp": 1776101882705,
-      "ganador": "yo",
-      "marcador": "2-0",
-      "duracion": 15,
-      "setIndex": 1
-    },
-    {
-      "timestamp": 1776101900931,
-      "ganador": "yo",
-      "marcador": "3-0",
-      "duracion": 18,
-      "setIndex": 1
-    },
-    {
-      "timestamp": 1776101918750,
-      "ganador": "yo",
-      "marcador": "4-0",
-      "duracion": 17,
-      "setIndex": 1
-    },
-    {
-      "timestamp": 1776101932260,
-      "ganador": "yo",
-      "marcador": "5-0",
-      "duracion": 13,
-      "setIndex": 1
-    },
-    {
-      "timestamp": 1776101950691,
-      "ganador": "yo",
-      "marcador": "6-0",
-      "duracion": 18,
-      "setIndex": 1
     }
   ],
   "servidorInicial": "yo",
-  "startTime": 1776101528455
+  "startTime": 1776105220940
 }

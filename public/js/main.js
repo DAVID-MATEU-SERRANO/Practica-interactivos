@@ -763,7 +763,7 @@ function mostrarEstadisticas(titulo) {
         // El baseline es TODO el historial para una media global estable del partido
         baselinePoints = globalHistory;
         baselineGames = globalGameHistory;
-        
+
         partido.ultimoIndiceDescanso = globalHistory.length; // Solo se actualiza aquí
         partido.ultimoIndiceJuegosDescanso = globalGameHistory.length;
     }
@@ -821,10 +821,10 @@ function mostrarEstadisticas(titulo) {
 
     if (mostrarDeltas && statsBaseline) {
         const normalizationFactor = (baselinePoints.length / (currentPoints.length || 1)) || 1;
-        
+
         const normalizedBaselineWinners = statsBaseline.winners.total / normalizationFactor;
         deltaWinners = formatDelta(getDelta(statsCurrent.winners.total, normalizedBaselineWinners), false);
-        
+
         const normalizedBaselineErrors = statsBaseline.errors.total / normalizationFactor;
         deltaErrors = formatDelta(getDelta(statsCurrent.errors.total, normalizedBaselineErrors), true);
 
@@ -860,7 +860,7 @@ function mostrarEstadisticas(titulo) {
     };
 
     // --- RENDERIZADO ---
-    
+
     // BLOQUE ATAQUE
     updateStat('stat-winners', statsCurrent.winners.total, deltaWinners);
     document.getElementById('sub-win-der').innerText = statsCurrent.winners.der;
@@ -876,7 +876,7 @@ function mostrarEstadisticas(titulo) {
     updateStat('stat-double-faults', statsCurrent.serves.doubleFaults, deltaDF);
     updateStat('stat-first-serve', firstServePct + '%', deltaServe);
     updateStat('stat-power-avg', avgPwr + 'G', deltaPwr);
-    
+
     // Potencia Máxima
     document.getElementById('stat-power-max').innerText = statsCurrent.power.max + "G";
     document.getElementById('stat-power-max-desc').innerText = statsCurrent.power.maxDetail || "--";
@@ -886,12 +886,12 @@ function mostrarEstadisticas(titulo) {
         return Object.entries(tipos)
             .sort((a, b) => b[1] - a[1]) // Ordenar por frecuencia
             .map(([tipo, count]) => `<div style="display:flex; justify-content:space-between; margin-bottom:6px; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px;">
-                <span style="opacity:0.7;">${tipo}</span>
+                <span style="color: white; font-weight: 500;">${tipo}</span>
                 <span style="font-weight:700; color:var(--accent);">${count}</span>
             </div>`)
             .join('');
     };
-    
+
     document.getElementById('winner-types').innerHTML = formatTipos(statsCurrent.winners.tipos);
     document.getElementById('error-types').innerHTML = formatTipos(statsCurrent.errors.tipos);
 
