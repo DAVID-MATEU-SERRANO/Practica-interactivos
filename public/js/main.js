@@ -26,8 +26,7 @@ const canvasEntrenamiento = document.getElementById('canvas-entrenamiento');
 const ctxEntrenamiento = canvasEntrenamiento ? canvasEntrenamiento.getContext('2d') : null;
 const txtAngulo = document.getElementById('txt-angulo');
 const feedbackBadge = document.getElementById('feedback-badge');
-const tipExtension = document.getElementById('tip-extension');
-const tipContacto = document.getElementById('tip-contacto');
+
 const angleDisplay = document.getElementById('angle-display');
 const trainingTipsContainer = document.querySelector('.training-tips');
 
@@ -1201,6 +1200,10 @@ socket.on('training-data', (data) => {
             isProcessingTM = true; // Bloquear nuevas predicciones hasta terminar esta
 
             tmModel.predict(ultimoFrameVideo).then(predictions => {
+                if (subModoTraining !== 'LINEA') {
+                    isProcessingTM = false;
+                    return;
+                }
                 // Dibujar fondo del panel de feedback
                 ctxEntrenamiento.fillStyle = "rgba(0, 0, 0, 0.6)";
                 ctxEntrenamiento.fillRect(20, 20, 350, 150);
@@ -1270,6 +1273,7 @@ socket.on('submodo-actualizado', (submodo) => {
     reiniciarDrill(); // Resetear al cambiar/salir de modo
 
     if (!submodo) {
+        document.getElementById('training-title').innerText = "ENTRENAMIENTO";
         hablar("Volviendo a la selección de entrenamiento. Diga Fondo, Saque o Línea para comenzar una serie.");
         dibujarPantallaSeleccionEntrenamiento();
         
@@ -1280,14 +1284,18 @@ socket.on('submodo-actualizado', (submodo) => {
         return;
     }
 
+    // Actualizar título dinámico
+    const titleEl = document.getElementById('training-title');
+    if (submodo) {
+        titleEl.innerText = "ENTRENAMIENTO " + submodo;
+    }
+
     // Mostrar extras solo en modos biomecánicos (Fondo y Saque)
     if (submodo === 'FONDO' || submodo === 'SAQUE') {
         if (angleDisplay) angleDisplay.style.display = 'block';
-        if (trainingTipsContainer) trainingTipsContainer.style.display = 'flex';
     } else {
         // En LINEA o selección, ocultamos los extras biomecánicos
         if (angleDisplay) angleDisplay.style.display = 'none';
-        if (trainingTipsContainer) trainingTipsContainer.style.display = 'none';
     }
 
     if (submodo === 'LINEA') {
@@ -1314,12 +1322,7 @@ function calcularAngulo(A, B, C) {
 // Eliminada evaluarTecnicaFrontal para simplificar según petición de usuario
 
 
-function updateTip(id, text, type) {
-    const el = document.getElementById(id);
-    const status = el.querySelector('.tip-status');
-    status.innerText = text;
-    el.className = 'tip-card ' + (type || '');
-}
+
 
 function dibujarPose(ctx, landmarks) {
     const w = canvasEntrenamiento.width;

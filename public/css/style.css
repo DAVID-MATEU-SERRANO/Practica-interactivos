@@ -35,9 +35,45 @@ body {
 h1,
 h2,
 h3,
+h4,
 .heading-premium {
     font-family: 'Outfit', sans-serif;
     letter-spacing: -0.02em;
+    margin-top: 0;
+}
+
+/* --- UNIFIED HEADING SYSTEM --- */
+.heading-xl {
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(to right, #fff, var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    margin-bottom: 12px;
+    letter-spacing: -0.03em;
+}
+
+.heading-l {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.heading-m {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.heading-caps {
+    font-size: 0.8rem;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    font-weight: 800;
+    text-transform: uppercase;
+    display: block;
 }
 
 /* Glassmorphism System */
@@ -96,13 +132,7 @@ h3,
 }
 
 .overlay-content h1 {
-    font-size: 2.5rem;
-    font-weight: 800;
-    background: linear-gradient(to right, #fff, var(--accent));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
+    /* Mantenido por compatibilidad pero usa .heading-xl en el HTML */
     margin-bottom: 8px;
 }
 
@@ -199,13 +229,9 @@ h3,
 }
 
 .marcador-header {
+
     text-align: center;
-    font-size: 0.8rem;
-    letter-spacing: 0.4em;
-    color: var(--accent);
     margin-bottom: 32px;
-    font-weight: 800;
-    text-transform: uppercase;
 }
 
 .fila-marcador {
@@ -376,11 +402,8 @@ h3,
 }
 
 .sensor-status-text {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.75rem;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    color: var(--text-main);
+
+    margin-bottom: 10px;
 }
 
 /* Focus Mode Adjustments */

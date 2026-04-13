@@ -21,7 +21,7 @@
     <!-- Pantalla de Inicio (Overlay) -->
     <div id="start-overlay">
         <div class="overlay-content">
-            <h1>TENIS INTELIGENTE 🎾</h1>
+            <h1 class="heading-xl">TENIS INTELIGENTE 🎾</h1>
             <p>Sistema de Análisis Ubicuo de Alto Rendimiento</p>
             <button id="btn-iniciar" class="btn-premium">INICIAR SISTEMA</button>
         </div>
@@ -75,7 +75,7 @@
                 <!-- Columna Izquierda -->
                 <div class="marcador-main-col">
                     <div id="marcador-partido" class="glass">
-                        <div class="marcador-header">MARCADOR EN VIVO</div>
+                        <div class="marcador-header heading-caps">MARCADOR EN VIVO</div>
                         <div class="marcador-tabla">
                             <div class="fila-marcador header">
                                 <div class="col-nombre">JUGADOR</div>
@@ -112,7 +112,7 @@
                     <div class="stats-header">
                         <div class="stats-icon">📊</div>
                         <div class="stats-title-group">
-                            <h3>RESUMEN TÁCTICO</h3>
+                            <h3 class="heading-m">RESUMEN TÁCTICO</h3>
                             <p id="stats-moment">Descanso de Pista</p>
                         </div>
                         <button id="close-stats">×</button>
@@ -196,7 +196,7 @@
                 <span>Diga <b>"Salir"</b> para salir</span>
             </div>
             <div class="training-header" style="text-align: center; margin-bottom: 32px;">
-                <h1 class="heading-premium" style="color: var(--volt); margin: 0; font-size: 2.5rem;">ENTRENAMIENTO</h1>
+                <h1 id="training-title" class="heading-l" style="color: var(--volt);">ENTRENAMIENTO</h1>
                 <p style="color: var(--text-muted); margin: 8px 0;">Análisis biomecánico en tiempo real</p>
             </div>
 
@@ -218,16 +218,7 @@
                 </div>
             </div>
 
-            <div class="training-tips" style="margin-top: 32px; display: flex; gap: 24px;">
-                <div class="tip-card" id="tip-extension">
-                    <span class="tip-label">EXTENSIÓN</span>
-                    <span class="tip-status">ESPERANDO...</span>
-                </div>
-                <div class="tip-card" id="tip-contacto">
-                    <span class="tip-label">CONTACTO</span>
-                    <span class="tip-status">ESPERANDO...</span>
-                </div>
-            </div>
+
         </div>
 
         <div id="nadal-overlay"
