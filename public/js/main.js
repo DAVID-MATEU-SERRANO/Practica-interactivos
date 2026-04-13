@@ -359,7 +359,10 @@ socket.on('punto-deshecho', (stats) => {
 });
 
 function procesarPunto(payload, silent = false) {
-    if (!silent) statsOverlay.classList.remove('visible');
+    if (!silent) {
+        statsOverlay.classList.remove('visible');
+        document.body.classList.remove('stats-visible');
+    }
     if (partido.isMatchFinished || partido.quienSaca === null) return;
 
     let quien, metrics;
