@@ -451,6 +451,12 @@ function capturarMetricas() {
 }
 
 function ejecutarPuntoGesto(destino, motivo) {
+    if (capturingPeak) {
+        // Un golpe se está analizando. Esperamos para que el golpe se registre antes de cerrar el punto.
+        setTimeout(() => ejecutarPuntoGesto(destino, motivo), 100);
+        return;
+    }
+
     // Feedback visual móvil de puntuación/gesto
     if (pulseCircle) {
         pulseCircle.classList.add('punto');

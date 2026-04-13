@@ -734,6 +734,9 @@ function mostrarEstadisticas(titulo) {
     let currentGames = [];
     let baselineGames = null;
     const isSetSummary = titulo.startsWith("Fin del Set") || titulo === "Fin del Partido";
+    // Solo mostramos deltas si NO es un resumen de set/partido 
+    // Y si NO es el primer descanso del partido (ultimoIndiceDescanso > 0)
+    const mostrarDeltas = !isSetSummary && partido.ultimoIndiceDescanso > 0;
 
     if (isSetSummary) {
         const match = titulo.match(/Fin del Set (\d+)/);
@@ -756,8 +759,11 @@ function mostrarEstadisticas(titulo) {
         currentPoints = globalHistory.slice(partido.ultimoIndiceDescanso);
         currentGames = globalGameHistory.slice(partido.ultimoIndiceJuegosDescanso);
         if (currentPoints.length === 0) return; // Guard para evitar errores de slice vacío
-        baselinePoints = partido.ultimoIndiceDescanso > 0 ? globalHistory.slice(0, partido.ultimoIndiceDescanso) : null;
-        baselineGames = partido.ultimoIndiceJuegosDescanso > 0 ? globalGameHistory.slice(0, partido.ultimoIndiceJuegosDescanso) : null;
+
+        // El baseline es TODO el historial para una media global estable del partido
+        baselinePoints = globalHistory;
+        baselineGames = globalGameHistory;
+        
         partido.ultimoIndiceDescanso = globalHistory.length; // Solo se actualiza aquí
         partido.ultimoIndiceJuegosDescanso = globalGameHistory.length;
     }
@@ -798,118 +804,94 @@ function mostrarEstadisticas(titulo) {
         else if (numDelta < 0) colorClass = inverse ? 'positive' : 'negative';
 
         let displayDelta = delta.toString().replace(/\.0$/, '');
-        return `<small class="delta ${colorClass}">(${numDelta > 0 ? '+' : ''}${displayDelta}%)</small>`;
-    };
-
-    const updateValueWithDelta = (id, curr, globValue, inverse = false) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-
-        let deltaText = "";
-        if (statsBaseline) {
-            const normalizationFactor = (baselinePoints.length / (currentPoints.length || 1)) || 1;
-            const normalizedBaseline = globValue / normalizationFactor;
-            const delta = getDelta(curr, normalizedBaseline);
-            deltaText = formatDelta(delta, inverse);
-        }
-
-        el.querySelector('.value').innerHTML = `${curr} ${deltaText}`;
+        return ` <small class="delta ${colorClass}">(${numDelta > 0 ? '+' : ''}${displayDelta}%)</small>`;
     };
 
     console.log(`Trigger: ${titulo}. Puntos actuales: ${currentPoints.length}. Baseline: ${baselinePoints ? baselinePoints.length : 'N/A'}`);
 
-    // Winners e Inferiores
-    updateValueWithDelta('stat-winners', statsCurrent.winners.total, statsBaseline ? statsBaseline.winners.total : 0);
+    let deltaWinners = "";
+    let deltaErrors = "";
+    let deltaAces = "";
+    let deltaDF = "";
+    let deltaServe = "";
+    let deltaPwr = "";
+
+    const firstServePct = statsCurrent.serves.firstTotal > 0 ? (statsCurrent.serves.firstIn / statsCurrent.serves.firstTotal * 100).toFixed(0) : 0;
+    const avgPwr = statsCurrent.power.count > 0 ? (statsCurrent.power.sum / statsCurrent.power.count).toFixed(1) : 0;
+
+    if (mostrarDeltas && statsBaseline) {
+        const normalizationFactor = (baselinePoints.length / (currentPoints.length || 1)) || 1;
+        
+        const normalizedBaselineWinners = statsBaseline.winners.total / normalizationFactor;
+        deltaWinners = formatDelta(getDelta(statsCurrent.winners.total, normalizedBaselineWinners), false);
+        
+        const normalizedBaselineErrors = statsBaseline.errors.total / normalizationFactor;
+        deltaErrors = formatDelta(getDelta(statsCurrent.errors.total, normalizedBaselineErrors), true);
+
+        const normalizedBaselineAces = statsBaseline.serves.aces / normalizationFactor;
+        deltaAces = formatDelta(getDelta(statsCurrent.serves.aces, normalizedBaselineAces), false);
+
+        const normalizedBaselineDF = statsBaseline.serves.doubleFaults / normalizationFactor;
+        deltaDF = formatDelta(getDelta(statsCurrent.serves.doubleFaults, normalizedBaselineDF), true);
+
+        if (statsBaseline.serves.firstTotal > 0) {
+            const currP = parseFloat(firstServePct);
+            const baselineP = (statsBaseline.serves.firstIn / statsBaseline.serves.firstTotal * 100);
+            const diff = (currP - baselineP).toFixed(1).replace(/\.0$/, '');
+            if (diff !== "0") {
+                deltaServe = ` <small class="delta ${diff > 0 ? 'positive' : 'negative'}">(${diff > 0 ? '+' : ''}${diff}%)</small>`;
+            }
+        }
+
+        if (statsBaseline.power.count > 0) {
+            const globAvgPwr = statsBaseline.power.sum / statsBaseline.power.count;
+            deltaPwr = formatDelta(getDelta(avgPwr, globAvgPwr), false);
+        }
+    }
+
+    // Ayudante para actualizar valores con delta opcional
+    const updateStat = (id, value, deltaHTML) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const valEl = el.classList.contains('value') ? el : el.querySelector('.value');
+        if (valEl) {
+            valEl.innerHTML = `${value}${mostrarDeltas ? deltaHTML : ''}`;
+        }
+    };
+
+    // --- RENDERIZADO ---
+    
+    // BLOQUE ATAQUE
+    updateStat('stat-winners', statsCurrent.winners.total, deltaWinners);
     document.getElementById('sub-win-der').innerText = statsCurrent.winners.der;
     document.getElementById('sub-win-rev').innerText = statsCurrent.winners.rev;
 
-    // Errores
-    updateValueWithDelta('stat-errors', statsCurrent.errors.total, statsBaseline ? statsBaseline.errors.total : 0, true);
-
-    // Tasa de Error (% de golpes que son fallos propios)
-    const errorRate = statsCurrent.power.count > 0 ? (statsCurrent.errors.total / statsCurrent.power.count * 100).toFixed(1) : 0;
-    let errDeltaHTML = "";
-    if (statsBaseline && statsBaseline.power.count > 0) {
-        const globErrorRate = (statsBaseline.errors.total / statsBaseline.power.count * 100).toFixed(1);
-        errDeltaHTML = formatDelta(getDeltaAbs(errorRate, globErrorRate), true);
-    }
-    document.getElementById('stat-error-rate').querySelector('.value').innerHTML = `${errorRate}% ${errDeltaHTML}`;
-
+    // BLOQUE ERRORES  
+    updateStat('stat-errors', statsCurrent.errors.total, deltaErrors);
     document.getElementById('sub-err-der').innerText = statsCurrent.errors.der;
     document.getElementById('sub-err-rev').innerText = statsCurrent.errors.rev;
 
-    // Saque
-    const firstServePct = statsCurrent.serves.firstTotal > 0 ? (statsCurrent.serves.firstIn / statsCurrent.serves.firstTotal * 100).toFixed(0) : 0;
-    let serveDeltaHTML = "";
-    if (statsBaseline && statsBaseline.serves.firstTotal > 0) {
-        const currP = parseFloat(firstServePct);
-        const baselineP = (statsBaseline.serves.firstIn / statsBaseline.serves.firstTotal * 100);
-        // Para porcentajes (1er saque) seguimos usando diferencia absoluta (puntos porcentuales) porque es lo estándar en tenis
-        const diff = (currP - baselineP).toFixed(1).replace(/\.0$/, '');
-        if (diff !== "0") {
-            serveDeltaHTML = `<small class="delta ${diff > 0 ? 'positive' : 'negative'}">(${diff > 0 ? '+' : ''}${diff}%)</small>`;
-        }
-    }
-    document.getElementById('stat-first-serve').innerHTML = `${firstServePct}% ${serveDeltaHTML}`;
-
-    // Aces (Normalizado por puntos para comparar volumen relativo)
-    let acesDeltaHTML = "";
-    if (statsBaseline) {
-        const normalizationFactor = (baselinePoints.length / (currentPoints.length || 1)) || 1;
-        const normalizedBaselineAces = statsBaseline.serves.aces / normalizationFactor;
-        acesDeltaHTML = formatDelta(getDelta(statsCurrent.serves.aces, normalizedBaselineAces), false);
-    }
-    document.getElementById('stat-aces').innerHTML = `${statsCurrent.serves.aces} ${acesDeltaHTML}`;
-
-    // Doble Falta
-    let dfDeltaHTML = "";
-    if (statsBaseline) {
-        const normalizationFactor = (baselinePoints.length / (currentPoints.length || 1)) || 1;
-        const normalizedBaselineDF = statsBaseline.serves.doubleFaults / normalizationFactor;
-        dfDeltaHTML = formatDelta(getDelta(statsCurrent.serves.doubleFaults, normalizedBaselineDF), true);
-    }
-    document.getElementById('stat-double-faults').innerHTML = `${statsCurrent.serves.doubleFaults} ${dfDeltaHTML}`;
-
-    // Potencia
-    const avgPwr = statsCurrent.power.count > 0 ? (statsCurrent.power.sum / statsCurrent.power.count).toFixed(1) : 0;
-    let pwrDeltaHTML = "";
-    if (statsBaseline && statsBaseline.power.count > 0) {
-        const globAvgPwr = statsBaseline.power.sum / statsBaseline.power.count;
-        pwrDeltaHTML = formatDelta(getDelta(avgPwr, globAvgPwr), false);
-    }
-    document.getElementById('stat-power-avg').innerHTML = `${avgPwr}G ${pwrDeltaHTML}`;
-
+    // BLOQUE SAQUE Y POTENCIA
+    updateStat('stat-aces', statsCurrent.serves.aces, deltaAces);
+    updateStat('stat-double-faults', statsCurrent.serves.doubleFaults, deltaDF);
+    updateStat('stat-first-serve', firstServePct + '%', deltaServe);
+    updateStat('stat-power-avg', avgPwr + 'G', deltaPwr);
+    
+    // Potencia Máxima
     document.getElementById('stat-power-max').innerText = statsCurrent.power.max + "G";
     document.getElementById('stat-power-max-desc').innerText = statsCurrent.power.maxDetail || "--";
 
-    // Tiempos
-    const avgTime = statsCurrent.time.pointCount > 0 ? (statsCurrent.time.pointSum / statsCurrent.time.pointCount).toFixed(1) : 0;
-    let pointTimeDeltaHTML = "";
-    if (statsBaseline && statsBaseline.time.pointCount > 0) {
-        const globAvgTime = (statsBaseline.time.pointSum / statsBaseline.time.pointCount).toFixed(1);
-        pointTimeDeltaHTML = formatDelta(getDelta(avgTime, globAvgTime), true); // Aumentar tiempo lo consideramos "malo" o rojo
-    }
-    document.getElementById('stat-time-point').innerHTML = `${avgTime}s ${pointTimeDeltaHTML}`;
-
-    // Tiempo medio por juego
-    if (currentGames.length > 0) {
-        const avgGameTime = (currentGames.reduce((acc, g) => acc + g.duracion, 0) / currentGames.length).toFixed(0);
-        let gameTimeDeltaHTML = "";
-        if (baselineGames && baselineGames.length > 0) {
-            const globAvgGameTime = (baselineGames.reduce((acc, g) => acc + g.duracion, 0) / baselineGames.length).toFixed(0);
-            gameTimeDeltaHTML = formatDelta(getDelta(avgGameTime, globAvgGameTime), true);
-        }
-        document.getElementById('stat-time-game').innerHTML = `${avgGameTime}s ${gameTimeDeltaHTML}`;
-    } else {
-        document.getElementById('stat-time-game').innerHTML = `0s`;
-    }
-
-    // Detalle de tipos
+    // DESGLOSE DE GOLPES (Listado)
     const formatTipos = (tipos) => {
         return Object.entries(tipos)
-            .map(([tipo, count]) => `<div>${tipo}: <b>${count}</b></div>`)
+            .sort((a, b) => b[1] - a[1]) // Ordenar por frecuencia
+            .map(([tipo, count]) => `<div style="display:flex; justify-content:space-between; margin-bottom:6px; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px;">
+                <span style="opacity:0.7;">${tipo}</span>
+                <span style="font-weight:700; color:var(--accent);">${count}</span>
+            </div>`)
             .join('');
     };
+    
     document.getElementById('winner-types').innerHTML = formatTipos(statsCurrent.winners.tipos);
     document.getElementById('error-types').innerHTML = formatTipos(statsCurrent.errors.tipos);
 
