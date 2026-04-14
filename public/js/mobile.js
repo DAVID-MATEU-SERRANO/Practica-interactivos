@@ -46,7 +46,7 @@ smallCanvas.height = 240;
 
 // Variables para las métricas de los golpes
 let pointStartTime = Date.now(); // Tiempo de inicio del punto
-let gameStartTime = Date.now(); // Tiempo de inicio del juego
+let gameStartTime = null; // Tiempo de inicio del juego
 let lastStrokeMetrics = {
     power: 0,
     trajectory: 'Plano'
@@ -154,7 +154,7 @@ socket.on('registrar-fin-juego', (data) => {
         ...data,
         duracion: duration.toFixed(1) + "s"
     });
-    gameStartTime = Date.now();
+    gameStartTime = null; // Ponemos en tiempo al null para que vuelva a empezar a contar cuando se registre el primer golpe del siguiente juego
     isPointRunning = false;
 });
 
@@ -353,6 +353,11 @@ function registrarGolpeTenis(now) {
     if (!isPointRunning) {
         pointStartTime = now;
         isPointRunning = true;
+
+        // Si aún no empezó el juego, empezamos a contar
+        if (gameStartTime === null) {
+            gameStartTime = Date.now();
+        }
     }
     // Comprobamos si el golpe es válido
     const esValido = capturarMetricas();
@@ -734,5 +739,3 @@ async function predictWebcam() {
     }
     requestID = window.requestAnimationFrame(predictWebcam);
 }
-
-// Reset y Funciones Auxiliares

@@ -29,7 +29,7 @@
 
     <div id="dashboard-content" style="display: none;">
         <!-- Indicador de Estado Global -->
-        <div id="status-bar" class="status-bar-top">
+        <div class="status-bar-top">
             <div id="mute-indicator" class="status-badge glass" style="display: none;">
                 <span class="icon">🔇</span>
                 <span>SISTEMA SILENCIADO</span>
@@ -71,7 +71,7 @@
                     <span>Diga <b>"Deshacer"</b> para quitar el punto</span>
                 </div>
             </div>
-            <div id="status-container" class="glass"
+            <div class="glass"
                 style="max-width: fit-content; margin: 20px auto; padding: 10px 24px;">
                 <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">MODO ACTIVO: <span id="modo-texto"
                         style="color: var(--accent); font-weight: 700;">--</span></p>
@@ -90,7 +90,7 @@
                                 <div class="col-set">S3</div>
                                 <div class="col-puntos">PTOS</div>
                             </div>
-                            <div class="fila-marcador" id="fila-yo">
+                            <div class="fila-marcador">
                                 <div class="col-nombre" id="nombre-yo">YO <span class="pelota-saque" id="saque-yo"
                                         style="visibility: hidden;">🎾</span></div>
                                 <div class="col-set" id="s1-yo">0</div>
@@ -98,7 +98,7 @@
                                 <div class="col-set" id="s3-yo">0</div>
                                 <div class="col-puntos" id="puntos-yo">0</div>
                             </div>
-                            <div class="fila-marcador" id="fila-rival">
+                            <div class="fila-marcador">
                                 <div class="col-nombre">RIVAL <span class="pelota-saque" id="saque-rival"
                                         style="visibility: hidden;">🎾</span></div>
                                 <div class="col-set" id="s1-rival">0</div>
@@ -113,7 +113,7 @@
                     <!-- Panel de métricas movido a stats-overlay -->
                 </div> <!-- Fin Columna Izquierda -->
 
-                <!-- Columna Derecha: Estadísticas Overlay (Ahora panel lateral) -->
+                <!-- Columna Derecha - Estadísticas Overlay -->
                 <div id="stats-overlay" class="glass">
                     <div class="stats-header">
                         <div class="stats-icon">📊</div>
@@ -195,7 +195,7 @@
 
                 </div>
 
-            </div> <!-- fin marcador-layout -->
+            </div>
         </div>
 
         <!-- VISTA MODO ENTRENAMIENTO -->

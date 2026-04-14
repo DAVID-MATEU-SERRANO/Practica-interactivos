@@ -1,6 +1,74 @@
 {
-  "points": [],
-  "games": [],
-  "servidorInicial": null,
-  "startTime": 1776175076795
+  "points": [
+    {
+      "winner": "yo",
+      "timestamp": 1776182507710,
+      "strokes": [
+        {
+          "power": "3.1",
+          "trajectory": "Plano",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "1.9s",
+      "motivo": "Winner"
+    },
+    {
+      "winner": "yo",
+      "timestamp": 1776182510166,
+      "strokes": [
+        {
+          "power": "2.2",
+          "trajectory": "Topspin (Liftado)",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "1.9s",
+      "motivo": "Winner"
+    },
+    {
+      "winner": "yo",
+      "timestamp": 1776182512520,
+      "strokes": [
+        {
+          "power": "1.5",
+          "trajectory": "Plano",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "1.9s",
+      "motivo": "Winner"
+    },
+    {
+      "winner": "rival",
+      "timestamp": 1776182514928,
+      "strokes": [],
+      "duracion_punto": "4.3s",
+      "motivo": "Winner"
+    },
+    {
+      "winner": "yo",
+      "timestamp": 1776182517745,
+      "strokes": [
+        {
+          "power": "1.9",
+          "trajectory": "Plano",
+          "side": "DERECHA"
+        }
+      ],
+      "duracion_punto": "1.9s",
+      "motivo": "Winner"
+    }
+  ],
+  "games": [
+    {
+      "timestamp": 1776182517757,
+      "ganador": "yo",
+      "marcador": "1-0",
+      "setIndex": 0,
+      "duracion": "12.5s"
+    }
+  ],
+  "servidorInicial": "rival",
+  "startTime": 1776182505253
 }

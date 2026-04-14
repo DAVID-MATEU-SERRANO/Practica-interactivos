@@ -14,7 +14,7 @@
 </head>
 
 <body>
-    <!-- Pantalla de Inicio (Overlay) -->
+    <!-- Pantalla de Inicio -->
     <div id="start-overlay">
         <div class="overlay-content">
             <h1 class="heading-xl">CONTROLADOR 📱</h1>
@@ -23,7 +23,7 @@
         </div>
     </div>
 
-    <!-- Contenido del Móvil (Estatus de Sensor) -->
+    <!-- Contenido del Móvil -->
     <div id="mobile-content"
         style="display: none; height: 100vh; display: flex; align-items: center; justify-content: center;">
         <div class="sensor-active-container">
@@ -38,10 +38,7 @@
 
         <!-- Elementos ocultos para MediaPipe y Voz -->
         <div style="display: none;">
-            <div id="estado"></div>
-            <div id="voice-label"></div>
             <video id="webcam" autoplay playsinline style="width: 480px; height: 360px;"></video>
-            <canvas id="output_canvas" style="width: 480px; height: 360px;"></canvas>
         </div>
     </div>
 
