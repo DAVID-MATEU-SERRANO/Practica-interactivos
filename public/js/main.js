@@ -632,13 +632,13 @@ function verificarCambioPista() {
 
 // --- MOTOR DE ESTADÍSTICAS ---
 
-function calcularEstadisticas(rangoPuntos) {
+function calcularEstadisticas(rangoPuntos, rangoJuegos = []) {
     let stats = {
         winners: { total: 0, der: 0, rev: 0, tipos: {} },
         errors: { total: 0, der: 0, rev: 0, tipos: {} },
         serves: { firstIn: 0, firstTotal: 0, aces: 0, doubleFaults: 0 },
         power: { sum: 0, count: 0, max: 0, maxDetail: "" },
-        time: { pointSum: 0, pointCount: 0 }
+        time: { pointSum: 0, pointCount: 0, gameSum: 0, gameCount: 0 }
     };
 
     rangoPuntos.forEach(p => {
@@ -724,6 +724,14 @@ function calcularEstadisticas(rangoPuntos) {
         }
     });
 
+    rangoJuegos.forEach(g => {
+        const dur = parseFloat(g.duracion);
+        if (!isNaN(dur)) {
+            stats.time.gameSum += dur;
+            stats.time.gameCount++;
+        }
+    });
+
     return stats;
 }
 
@@ -769,8 +777,8 @@ function mostrarEstadisticas(titulo) {
         partido.ultimoIndiceJuegosDescanso = globalGameHistory.length;
     }
 
-    const statsCurrent = calcularEstadisticas(currentPoints);
-    const statsBaseline = baselinePoints ? calcularEstadisticas(baselinePoints) : null;
+    const statsCurrent = calcularEstadisticas(currentPoints, currentGames);
+    const statsBaseline = baselinePoints ? calcularEstadisticas(baselinePoints, baselineGames) : null;
 
     document.getElementById('stats-moment').innerText = titulo;
 
@@ -816,9 +824,13 @@ function mostrarEstadisticas(titulo) {
     let deltaDF = "";
     let deltaServe = "";
     let deltaPwr = "";
+    let deltaPointTime = "";
+    let deltaGameTime = "";
 
     const firstServePct = statsCurrent.serves.firstTotal > 0 ? (statsCurrent.serves.firstIn / statsCurrent.serves.firstTotal * 100).toFixed(0) : 0;
     const avgPwr = statsCurrent.power.count > 0 ? (statsCurrent.power.sum / statsCurrent.power.count).toFixed(1) : 0;
+    const avgPointTime = statsCurrent.time.pointCount > 0 ? (statsCurrent.time.pointSum / statsCurrent.time.pointCount).toFixed(1) : 0;
+    const avgGameTime = statsCurrent.time.gameCount > 0 ? (statsCurrent.time.gameSum / statsCurrent.time.gameCount).toFixed(1) : 0;
 
     if (mostrarDeltas && statsBaseline) {
         const normalizationFactor = (baselinePoints.length / (currentPoints.length || 1)) || 1;
@@ -847,6 +859,16 @@ function mostrarEstadisticas(titulo) {
         if (statsBaseline.power.count > 0) {
             const globAvgPwr = statsBaseline.power.sum / statsBaseline.power.count;
             deltaPwr = formatDelta(getDelta(avgPwr, globAvgPwr), false);
+        }
+
+        if (statsBaseline.time.pointCount > 0) {
+            const globAvgPointTime = statsBaseline.time.pointSum / statsBaseline.time.pointCount;
+            deltaPointTime = formatDelta(getDelta(avgPointTime, globAvgPointTime), true);
+        }
+
+        if (statsBaseline.time.gameCount > 0) {
+            const globAvgGameTime = statsBaseline.time.gameSum / statsBaseline.time.gameCount;
+            deltaGameTime = formatDelta(getDelta(avgGameTime, globAvgGameTime), true);
         }
     }
 
@@ -877,6 +899,16 @@ function mostrarEstadisticas(titulo) {
     updateStat('stat-double-faults', statsCurrent.serves.doubleFaults, deltaDF);
     updateStat('stat-first-serve', firstServePct + '%', deltaServe);
     updateStat('stat-power-avg', avgPwr + 'G', deltaPwr);
+
+    // Tiempos
+    const elPointTime = document.getElementById('stat-avg-point-time');
+    if (elPointTime) {
+        elPointTime.innerHTML = `${avgPointTime}s${mostrarDeltas ? deltaPointTime : ''}`;
+    }
+    const elGameTime = document.getElementById('stat-avg-game-time');
+    if (elGameTime) {
+        elGameTime.innerHTML = `${avgGameTime}s${mostrarDeltas ? deltaGameTime : ''}`;
+    }
 
     // Potencia Máxima
     document.getElementById('stat-power-max').innerText = statsCurrent.power.max + "G";
@@ -1306,6 +1338,8 @@ socket.on('submodo-actualizado', (submodo) => {
         if (angleDisplay) angleDisplay.style.display = 'none';
         if (trainingTipsContainer) trainingTipsContainer.style.display = 'none';
         if (feedbackBadge) feedbackBadge.style.display = 'none';
+        const hintReiniciar = document.getElementById('hint-reiniciar');
+        if (hintReiniciar) hintReiniciar.style.display = 'none';
         return;
     }
 
@@ -1318,9 +1352,13 @@ socket.on('submodo-actualizado', (submodo) => {
     // Mostrar extras solo en modos biomecánicos (Fondo y Saque)
     if (submodo === 'FONDO' || submodo === 'SAQUE') {
         if (angleDisplay) angleDisplay.style.display = 'block';
+        const hintReiniciar = document.getElementById('hint-reiniciar');
+        if (hintReiniciar) hintReiniciar.style.display = 'flex';
     } else {
         // En LINEA o selección, ocultamos los extras biomecánicos
         if (angleDisplay) angleDisplay.style.display = 'none';
+        const hintReiniciar = document.getElementById('hint-reiniciar');
+        if (hintReiniciar) hintReiniciar.style.display = 'none';
     }
 
     if (submodo === 'LINEA') {

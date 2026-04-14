@@ -718,9 +718,7 @@ body.stats-visible .voice-hint.bottom-right {
 .stat-item .value { font-size: 1.2rem; }
 .mini-stat .value { font-size: 1.1rem; }
 .mini-stat .label { font-size: 0.65rem; }
-.stat-detail { max-height: 120px; overflow-y: auto; font-size: 0.8rem; margin-top: 15px; padding-right: 5px; }
-.stat-detail::-webkit-scrollbar { width: 4px; }
-.stat-detail::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+.stat-detail { font-size: 0.8rem; margin-top: 15px; }
 
 .stats-time-summary {
     background: rgba(56, 189, 248, 0.05);

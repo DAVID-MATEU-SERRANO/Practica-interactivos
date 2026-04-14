@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Tenis Inteligente - Dashboard</title>
+    <title>Tenis Inteligente</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -22,7 +22,7 @@
     <div id="start-overlay">
         <div class="overlay-content">
             <h1 class="heading-xl">TENIS INTELIGENTE 🎾</h1>
-            <p>Sistema de Análisis Ubicuo de Alto Rendimiento</p>
+            <p>Sistema de Análisis Ubicuo Profesional</p>
             <button id="btn-iniciar" class="btn-premium">INICIAR SISTEMA</button>
         </div>
     </div>
@@ -47,7 +47,7 @@
                 <div class="mode-card glass" id="card-entrenamiento">
                     <div class="voice-badge">Diga "ENTRENAMIENTO"</div>
                     <h2>MODO ENTRENAMIENTO</h2>
-                    <p>Perfeccione su técnica con análisis biomecánico MediaPipe.</p>
+                    <p>Perfeccione su técnica con análisis biomecánico.</p>
                 </div>
             </div>
 
@@ -55,7 +55,7 @@
             <div id="qr-section" class="glass">
                 <p class="qr-title">Vincular Dispositivo Móvil</p>
                 <div id="qrcode"></div>
-                <p class="qr-desc">Escanea para activar los sensores</p>
+                <p class="qr-desc">Escanea para conectar los sensores</p>
             </div>
         </div>
 
@@ -174,10 +174,26 @@
                             <div class="stat-item">
                                 <span class="label">Pico Máximo</span>
                                 <span id="stat-power-max" class="value">0G</span>
-                                <p id="stat-power-max-desc" style="font-size: 0.7rem; color: var(--text-muted); margin: 4px 0 0 0;"></p>
+                                <p id="stat-power-max-desc"
+                                    style="font-size: 0.7rem; color: var(--text-muted); margin: 4px 0 0 0;"></p>
                             </div>
                         </div>
                     </div>
+
+                    <div class="stats-footer"
+                        style="display: flex; justify-content: space-around; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; color: var(--text-muted);">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span>Duración Media Punto:</span>
+                            <span id="stat-avg-point-time"
+                                style="color: white; font-weight: bold; font-family: 'Outfit';">0s</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span>Duración Media Juego:</span>
+                            <span id="stat-avg-game-time"
+                                style="color: white; font-weight: bold; font-family: 'Outfit';">0s</span>
+                        </div>
+                    </div>
+
                 </div>
 
             </div> <!-- fin marcador-layout -->
@@ -190,6 +206,10 @@
                 <div class="hint-row">
                     <span class="icon">🎤</span>
                     <span>Diga <b>"Salir"</b> para salir</span>
+                </div>
+                <div class="hint-row" id="hint-reiniciar" style="display: none;">
+                    <span class="icon">🎤</span>
+                    <span>Diga <b>"Reiniciar"</b> al acabar la serie para seguir</span>
                 </div>
             </div>
             <div class="training-header" style="text-align: center; margin-bottom: 32px;">
