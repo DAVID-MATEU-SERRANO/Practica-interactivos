@@ -1,3 +1,5 @@
+import { pipeline, TextStreamer } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.0.0-next.7";
+
 const socket = io();
 
 // --- REFERENCIAS A LA UI BASE ---
@@ -144,6 +146,9 @@ if (btnIniciar) {
     btnIniciar.addEventListener('click', () => {
         startOverlay.style.display = 'none';
         dashboardContent.style.display = 'block';
+
+        // Cargar modelo de IA en background al iniciar el sistema
+        cargarModeloIA();
 
         // El sistema inicia siempre en el Lobby por defecto
         lobbyView.style.display = 'flex';
@@ -941,6 +946,84 @@ function mostrarEstadisticas(titulo) {
     // Mostrar Overlay
     statsOverlay.classList.add('visible');
     document.body.classList.add('stats-visible');
+
+    // Generar sugerencia de la IA
+    generarSugerenciaIA(statsCurrent, titulo);
+}
+
+// --- ENTRENADOR IA (TRANSFORMERS.JS) ---
+let aiGenerator = null;
+let isAiGenerating = false;
+
+async function cargarModeloIA() {
+    if (aiGenerator) return;
+    try {
+        const aiBox = document.getElementById('ai-content');
+        if (aiBox) aiBox.innerText = "Cargando modelo de IA por primera vez (puede tardar un poco)...";
+        console.log("Iniciando carga de transformers.js (Qwen2.5-0.5B-Instruct)...");
+        aiGenerator = await pipeline("text-generation", "onnx-community/Qwen2.5-0.5B-Instruct", {
+            dtype: "q4",
+            device: "webgpu"
+        });
+        if (aiBox) aiBox.innerText = "IA lista para dar sugerencias tácticas.";
+        console.log("Modelo IA cargado.");
+    } catch (e) {
+        console.error("Error cargando IA:", e);
+        const aiBox = document.getElementById('ai-content');
+        if (aiBox) aiBox.innerText = "No se pudo cargar la IA. Revisa consola o prueba otro navegador compatible con WebGPU.";
+    }
+}
+
+async function generarSugerenciaIA(stats, momento) {
+    const aiBox = document.getElementById('ai-content');
+    if (!aiBox) return;
+    if (!aiGenerator) {
+        aiBox.innerText = "La IA aún se está cargando...";
+        cargarModeloIA(); 
+        return;
+    }
+    if (isAiGenerating) return; 
+
+    isAiGenerating = true;
+    aiBox.innerText = "Pensando sugerencias...";
+
+    const firstServePct = stats.serves.firstTotal > 0 ? (stats.serves.firstIn / stats.serves.firstTotal * 100).toFixed(0) : 0;
+    const dataStr = `Momento: ${momento}. 
+Stats del jugador:
+- Winners: ${stats.winners.total} (Der: ${stats.winners.der}, Rev: ${stats.winners.rev})
+- Errores no forzados: ${stats.errors.total} (Der: ${stats.errors.der}, Rev: ${stats.errors.rev})
+- Porcentaje 1er saque: ${firstServePct}%
+- Aces: ${stats.serves.aces}, Dobles faltas: ${stats.serves.doubleFaults}`;
+
+    let messages = [
+        { role: "system", content: "Eres un entrenador de tenis dando consejos breves (máximo 2 frases y conciso) a tu jugador basándote en sus stats en este momento de partido. Da una sugerencia directa sobre si mejorar el saque, la derecha o asegurar golpes, nada más. Háblale en lenguaje coloquial animándole" },
+        { role: "user", content: dataStr }
+    ];
+
+    try {
+        let fullResponse = "";
+        aiBox.innerHTML = ""; 
+
+        const streamer = new TextStreamer(aiGenerator.tokenizer, {
+            skip_prompt: true,
+            callback_function: (token) => {
+                fullResponse += token;
+                aiBox.innerText = fullResponse;
+                aiBox.scrollTop = aiBox.scrollHeight;
+            }
+        });
+
+        await aiGenerator(messages, {
+            max_new_tokens: 64,
+            streamer: streamer,
+            temperature: 0.7
+        });
+    } catch (e) {
+        console.error("Error generando sugerencia:", e);
+        aiBox.innerText = "Error generando la sugerencia.";
+    } finally {
+        isAiGenerating = false;
+    }
 }
 
 // --- SINCRONIZACIÓN DE MODOS ---
