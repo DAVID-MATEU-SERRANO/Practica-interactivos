@@ -193,6 +193,7 @@ function resetEstadoPartido() {
     partido.gameHistory = [];
     partido.ultimoIndiceDescanso = 0;
     partido.ultimoIndiceJuegosDescanso = 0;
+    partido._gameStartTime = Date.now();
 
     // Restaurar nombres originales (por si se activó el Easter Egg de Rafa)
     if (document.getElementById("nombre-yo")) {
@@ -221,6 +222,13 @@ function reconstruirPartido(stats) {
     const servidorOriginal = stats.servidorInicial || (partido.servidorInicialSet === 0 ? 'yo' : (partido.servidorInicialSet === 1 ? 'rival' : null));
 
     resetEstadoPartido();
+    partido._gameStartTime = stats.startTime || Date.now();
+
+    // ✅ Restaurar gameHistory desde el servidor ANTES del replay
+    // (el replay en modo silent no la toca, pero así queda lista para mostrarEstadisticas)
+    if (stats.games) {
+        partido.gameHistory = [...stats.games];
+    }
 
     // Si tenemos servidor definido, restaurarlo antes de procesar puntos
     if (servidorOriginal) {
@@ -252,11 +260,6 @@ function reconstruirPartido(stats) {
 
     // Al finalizar la re-construcción, verificamos el DOM para reflejar el estado correcto
     setTimeout(() => verificarCambioPista(), 0);
-
-    // Para la duración de los juegos
-    if (stats.games) {
-        partido.gameHistory = [...stats.games];
-    }
 }
 
 // Función para recuperar las estadísticas del partido
@@ -486,11 +489,20 @@ function ganarJuego(w) {
     const payload = {
         ganador: w === 0 ? 'yo' : 'rival',
         marcador: `${partido.games[0]}-${partido.games[1]}`,
-        // No incluimos la duración para que la calcule el móvil
         setIndex: partido.currentSetIndex
     };
+
     if (!isReplaying) {
-        // Enviamos el payload al servidor
+        // ✅ Añadir el juego localmente de forma inmediata con duración estimada
+        // El móvil enviará la duración real luego, sync-games la corregirá
+        const duracionEstimada = ((Date.now() - (partido._gameStartTime || Date.now())) / 1000).toFixed(1) + "s";
+        partido.gameHistory.push({
+            timestamp: Date.now(),
+            ...payload,
+            duracion: duracionEstimada
+        });
+        // Guardar tiempo de inicio del próximo juego
+        partido._gameStartTime = Date.now();
         socket.emit('registrar-fin-juego', payload);
     }
 
