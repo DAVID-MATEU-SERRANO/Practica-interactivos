@@ -954,7 +954,7 @@ socket.on('modo-actualizado', (modo) => {
         lobbyView.style.display = 'none';
         marcadorView.style.display = 'none';
         entrenamientoView.style.display = 'flex';
-        hablar("Modo entrenamiento activado. Seleccione su golpe en el controlador.");
+        hablar("Modo entrenamiento activado. Seleccione que quiere entrenar.");
         dibujarPantallaSeleccionEntrenamiento();
 
         // Ocultar extras inicialmente en la selección
@@ -1291,7 +1291,7 @@ socket.on('training-data', (data) => {
                 });
                 console.log(bestClass);
 
-                const isPisando = bestClass.includes("CLASS 2");
+                const isPisando = bestClass.includes("CLASS 1");
                 const newState = isPisando ? 'PISANDO' : 'PERFECTO';
 
                 // Solo actualizar el estado en cache. El próximo training-data lo dibujará
@@ -1301,7 +1301,7 @@ socket.on('training-data', (data) => {
 
                 const now = Date.now();
                 if (isPisando && now - lastFeedbackTime > 3000) {
-                    hablar("\u00A1Pie fuera!");
+                    hablar("\u00A1Pisando línea!");
                     lastFeedbackTime = now;
                 }
 
