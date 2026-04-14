@@ -265,7 +265,8 @@ h4,
 }
 
 #training-title {
-    font-size: 3.5rem !important; /* Forzado para consistencia en todos los submodos */
+    font-size: 3.5rem !important;
+    /* Forzado para consistencia en todos los submodos */
     font-weight: 900;
     margin: 0;
     text-shadow: 0 0 20px var(--volt-glow);
@@ -678,7 +679,8 @@ body.flash-extremo {
     box-shadow: 0 12px 64px rgba(0, 0, 0, 0.6);
     flex: 1;
     padding: 30px;
-    height: 80vh; /* Ajuste para evitar scroll */
+    height: 80vh;
+    /* Ajuste para evitar scroll */
     text-align: left;
     margin: 0;
     animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1);
@@ -689,6 +691,7 @@ body.flash-extremo {
         opacity: 0;
         transform: translateX(50px);
     }
+
     to {
         opacity: 1;
         transform: translateX(0);
@@ -713,12 +716,31 @@ body.stats-visible .voice-hint.bottom-right {
 }
 
 /* Reducir tamaños para vista compacta sin scroll */
-.stats-column { margin-bottom: 10px; }
-.stats-column h4 { font-size: 0.9rem; margin-bottom: 8px; }
-.stat-item .value { font-size: 1.2rem; }
-.mini-stat .value { font-size: 1.1rem; }
-.mini-stat .label { font-size: 0.65rem; }
-.stat-detail { font-size: 0.8rem; margin-top: 15px; }
+.stats-column {
+    margin-bottom: 10px;
+}
+
+.stats-column h4 {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.stat-item .value {
+    font-size: 1.2rem;
+}
+
+.mini-stat .value {
+    font-size: 1.1rem;
+}
+
+.mini-stat .label {
+    font-size: 0.65rem;
+}
+
+.stat-detail {
+    font-size: 0.8rem;
+    margin-top: 15px;
+}
 
 .stats-time-summary {
     background: rgba(56, 189, 248, 0.05);
@@ -745,7 +767,9 @@ body.stats-visible .voice-hint.bottom-right {
     margin-left: 6px;
 }
 
-.match-time { font-size: 0.9rem; }
+.match-time {
+    font-size: 0.9rem;
+}
 
 .stats-header {
     display: flex;
@@ -775,15 +799,6 @@ body.stats-visible .voice-hint.bottom-right {
     letter-spacing: 0.2em;
 }
 
-#close-stats {
-    margin-left: auto;
-    background: transparent;
-    border: none;
-    color: white;
-    font-size: 2rem;
-    cursor: pointer;
-    opacity: 0.5;
-}
 
 .stats-container {
     display: grid;
@@ -1019,9 +1034,11 @@ body.stats-visible .voice-hint.bottom-right {
 #nadal-overlay {
     position: fixed;
     inset: 0;
-    z-index: 20000; /* Por encima de todo, incluyendo .voice-hint (10000) */
+    z-index: 20000;
+    /* Por encima de todo, incluyendo .voice-hint (10000) */
     background: black;
-    display: none; /* Controlado por JS, pero definido aquí para consistencia */
+    display: none;
+    /* Controlado por JS, pero definido aquí para consistencia */
     flex-direction: column;
     align-items: center;
     justify-content: center;

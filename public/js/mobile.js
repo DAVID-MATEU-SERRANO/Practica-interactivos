@@ -28,15 +28,15 @@ let lastStrikeTime = 0; // tiempo del último golpe
 let confirmTimer = null; // temporizador para confirmar un golpe
 let lockGestos = false;  // bloquea los gestos
 let isPointRunning = false; // indica si se está ejecutando un punto
-let esperandoConfirmacionSalir = false;
-let timeoutConfirmacion = null;
+let esperandoConfirmacionSalir = false; // Para la confirmación de salir
+let timeoutConfirmacion = null; // Timeout para la confirmación de salir
 
 // Variables para el modo entrenamiento
-let poseLandmarker = undefined;
-let webcamRunning = false;
-const videoElement = document.getElementById("webcam");
+let poseLandmarker = undefined; // PoseLandmarker para la detección de golpes
+let webcamRunning = false; // Indica si la cámara está encendida
+const videoElement = document.getElementById("webcam"); // Elemento de video
 let currentFacingMode = "user"; // "user" (front) o "environment" (back)
-let currentSubModo = null;
+let currentSubModo = null; // Submodo actual (dentro del modo entrenamiento)
 
 // Reutilizar canvas para el envío de video
 const smallCanvas = document.createElement('canvas');
@@ -45,13 +45,13 @@ smallCanvas.width = 320;
 smallCanvas.height = 240;
 
 // Variables para las métricas de los golpes
-let pointStartTime = Date.now();
-let gameStartTime = Date.now();
+let pointStartTime = Date.now(); // Tiempo de inicio del punto
+let gameStartTime = Date.now(); // Tiempo de inicio del juego
 let lastStrokeMetrics = {
     power: 0,
     trajectory: 'Plano'
 };
-let currentPointStrokes = [];
+let currentPointStrokes = []; // Array de golpes del punto actual
 
 // Sensores adicionales
 let gyroSensor = null;
@@ -150,7 +150,6 @@ socket.on('punto-registrado', () => {
 socket.on('registrar-fin-juego', (data) => {
     // El servidor nos avisa que el juego terminó, enviamos la duración acumulada
     const duration = (Date.now() - gameStartTime) / 1000;
-    // Enviamos la duración acumulada
     socket.emit('registrar-fin-juego', {
         ...data,
         duracion: duration.toFixed(1) + "s"
@@ -161,14 +160,15 @@ socket.on('registrar-fin-juego', (data) => {
 
 // Sincroniza el submodo del sistema
 socket.on('submodo-actualizado', (submodo) => {
+    // Guardamos el modo de cámara anterior
     const oldFacingMode = currentFacingMode;
     currentSubModo = submodo;
-
+    // Si no hay submodo, paramos el entrenamiento
     if (!submodo) {
         stopTraining();
         return;
     }
-
+    // Actualizamos el modo de cámara (cambia en el modo linea)
     currentFacingMode = (submodo === 'LINEA') ? 'environment' : 'user';
 
     // Gestión de cámara según el modo
@@ -211,7 +211,7 @@ function activarSensores() {
                 const rawMagnitude = Math.sqrt(rawMag.ax ** 2 + rawMag.ay ** 2 + rawMag.az ** 2);
                 // Convertimos a fuerzas G (dividiendo por la gravedad terrestre 9.8)
                 const rawPowerG = rawMagnitude / 9.8;
-
+                // Tiempo actual
                 const now = Date.now();
 
                 // Usamos la magnitud SUAVIZADA solo para detectar si hubo un movimiento brusco (umbral)
@@ -273,6 +273,7 @@ function activarSensores() {
 
     // Se encarga de medir la rotación (giros de muñeca).
     if ('Gyroscope' in window) {
+        // Inicializamos el giroscopio a 60Hz
         gyroSensor = new Gyroscope({ frequency: 60 });
 
         gyroSensor.onreading = () => {
@@ -281,9 +282,11 @@ function activarSensores() {
                 currentMA.rx = movingAverage(buffers.rx, gyroSensor.x);
                 currentMA.ry = movingAverage(buffers.ry, gyroSensor.y);
 
+                // No procesar si los gestos están bloqueados, no estamos en partido o no se ha definido quién saca
                 if (lockGestos || modoActual !== 'MODO PARTIDO' || !saqueDefinido) return;
-
+                // Tiempo actual
                 const now = Date.now();
+                // Magnitud del vector de aceleración
                 const magnitude = Math.sqrt(currentMA.ax ** 2 + currentMA.ay ** 2 + currentMA.az ** 2);
 
                 // Si el móvil gira rápido (en el eje Y) pero el brazo NO se está moviendo fuerte (baja aceleración),
@@ -340,40 +343,45 @@ function gestionarGiroPuntuacion(val) {
     }, VENTANA_ROTACION);
 }
 
+// Registra un golpe de tenis
 function registrarGolpeTenis(now) {
     // Si detectamos un golpe fuerte de tenis, cancelamos cualquier gesto de rotación a medias
     rotationCount = 0;
     if (rotationTimer) clearTimeout(rotationTimer);
 
+    // Si no estamos en medio de un punto, empezamos uno nuevo  
     if (!isPointRunning) {
         pointStartTime = now;
         isPointRunning = true;
     }
-
+    // Comprobamos si el golpe es válido
     const esValido = capturarMetricas();
     if (!esValido) return; // Ignorar si fue detectado como backswing/preparación
 
-    // Feedback visual móvil
+    // Feedback visual móvil (lo ponemos en azulito)
     if (pulseCircle) {
         pulseCircle.classList.add('golpe');
         setTimeout(() => pulseCircle.classList.remove('golpe'), 400);
     }
 
+    // Guardamos el golpe en el array y lo enviamos al servidor
     currentPointStrokes.push({ ...lastStrokeMetrics });
-    socket.emit('nuevo-golpe', lastStrokeMetrics);
 }
 
+// Captura las métricas del golpe
 function capturarMetricas() {
     const power = peakPower;
     let trajectory = 'Plano';
 
-    // 1. ANÁLISIS DE VENTANA (±150ms alrededor del impacto)
+    // Analizamos la ventana de tiempo alrededor del impacto
     let maxGyroRY = 0;
     let maxGyroRX = 0;
     let azAtImpact = 0;
     const windowMs = 150;
 
+    // Recorremos el historial de sensores
     sensorHistory.forEach(s => {
+        // Si el sensor está dentro de la ventana de tiempo
         if (s.t >= peakTime - windowMs && s.t <= peakTime + windowMs) {
             // Buscamos el valor con mayor magnitud absoluta en ambos ejes
             if (Math.abs(s.ry) > Math.abs(maxGyroRY)) {
@@ -394,11 +402,11 @@ function capturarMetricas() {
         return false;
     }
 
-    // DERECHA (impacto pantalla) -> Z positivo potente. REVÉS (impacto trasera o flick suave) -> Z bajo o negativo.
-    // Refinamiento v6 (Final): Ajuste fino de bandas para golpes suaves y laterales
+    // DERECHA (impacto pantalla) -> Z positivo potente. REVÉS (impacto parte trasera) -> Z bajo o negativo.
     const esReves = azAtImpact <= 3.0;
     const ladoStr = esReves ? "REVÉS" : "DERECHA";
 
+    // Lo usamos para ver si el golpep es liftado
     const scoreLiftado = (-maxGyroRX * 0.7) + (maxGyroRY * 1.3);
 
     // Solo aplicamos lógica de saque si el sistema indica que sacas "tú"
@@ -415,7 +423,8 @@ function capturarMetricas() {
     }
 
     if (trajectory === 'Plano') { // Si no se ha definido como saque aún...
-        // LÓGICA DE TRAYECTORIA (Golpes normales)
+        // golpes normales
+        // Identificamos el tipo de golpe que es comparando los valores de los sensores
         if (esReves) {
             // Backhand (REVÉS)
             if (azAtImpact < -12.0 || maxGyroRX < -4.5) {
@@ -439,9 +448,10 @@ function capturarMetricas() {
         }
     }
 
-    // Escalar potencia para ampliar diferencias perceptuales (v11: FULL TURBO - Exp 2.3 * 1.5)
+    // Escalar potencia para ver un poco más de diferencia entre golpes fuertes y flojos
     const powerScaled = (Math.pow(power, 2.3) * 0.25).toFixed(1);
 
+    // Guardamos las métricas finales del golpe
     lastStrokeMetrics = {
         power: powerScaled,
         trajectory: trajectory,
@@ -451,6 +461,7 @@ function capturarMetricas() {
     return true; // Golpe válido
 }
 
+// Ejecuta un punto
 function ejecutarPuntoGesto(destino, motivo) {
     if (capturingPeak) {
         // Un golpe se está analizando. Esperamos para que el golpe se registre antes de cerrar el punto.
@@ -458,14 +469,13 @@ function ejecutarPuntoGesto(destino, motivo) {
         return;
     }
 
-    // Feedback visual móvil de puntuación/gesto
+    // Feedback visual móvil de puntuación (lo ponemos naranja)
     if (pulseCircle) {
         pulseCircle.classList.add('punto');
         setTimeout(() => pulseCircle.classList.remove('punto'), 600);
     }
 
-    // --- LÓGICA DE MEDIA / SEGUNDO SAQUE ---
-    // Si el usuario falla su propio saque y es el primero (y no ha habido peloteo)
+    // Si el usuario falla su primer saque (y no ha habido peloteo), entra en segundo saque
     const noHayGolpesDeRally = currentPointStrokes.every(s => s.trajectory.includes('SAQUE'));
     if (destino === 'rival' && motivo === 'Fallo Mío' && !esSegundoSaque && quienSaca === 'yo' && noHayGolpesDeRally) {
         esSegundoSaque = true;
@@ -479,7 +489,7 @@ function ejecutarPuntoGesto(destino, motivo) {
 
     // Si ya era segundo saque y vuelve a fallar, es Doble Falta
     if (esSegundoSaque && destino === 'rival' && motivo === 'Fallo Mío') {
-        // Se considera doble falta si la secuencia de golpes es solo de saques (o vacía)
+        // Se considera doble falta si la secuencia de golpes es solo de saques
         const soloSaques = currentPointStrokes.every(s => s.trajectory.includes('SAQUE'));
         if (soloSaques) {
             motivo = "Doble Falta";
@@ -488,10 +498,12 @@ function ejecutarPuntoGesto(destino, motivo) {
 
     // Resetear estado de saque para el siguiente punto
     esSegundoSaque = false;
-
     lockGestos = true;
+
+    // Calculamos la duración del punto
     const pointDuration = (Date.now() - pointStartTime) / 1000;
 
+    // Enviamos el punto al servidor
     socket.emit('anotar-punto', {
         quien: destino,
         metrics: {
@@ -501,19 +513,21 @@ function ejecutarPuntoGesto(destino, motivo) {
         }
     });
 
+    // Reseteamos todo para el siguiente punto
     golpeCount = 0;
     sequenceStrokes = [];
     currentPointStrokes = [];
     isPointRunning = false;
     if (confirmTimer) clearTimeout(confirmTimer);
     setTimeout(() => { lockGestos = false; }, COOLDOWN_PUNTO);
-    setTimeout(() => { lockGestos = false; capturingPeak = false; }, 3000); // Watchdog rescate
+    setTimeout(() => { lockGestos = false; capturingPeak = false; }, 3000);
 }
 
-// --- LÓGICA DE VOZ ---
+// Comandos de voz
 function activarVoz() {
     const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
     if (SpeechRecognition) {
+        // Creamos el reconocimiento de voz
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.lang = 'es-ES';
@@ -521,24 +535,24 @@ function activarVoz() {
         recognition.onresult = (event) => {
             const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
 
-            // ── COMANDOS GLOBALES (funcionan siempre) ──────────────────────────
+            // Comandos globales (funcionan siempre)
             if (transcript.includes("silenciar")) { socket.emit('alternar-audio', true); return; }
             if (transcript.includes("activar")) { socket.emit('alternar-audio', false); return; }
 
-            // ── DESDE LOBBY: únicos comandos válidos para cambiar de modo ──────
+            // Desde lobby: únicos comandos válidos para cambiar de modo
             if (modoActual === '' || modoActual === 'LOBBY') {
                 if (transcript.includes("partido")) { socket.emit('cambiar-modo', 'MODO PARTIDO'); }
                 else if (transcript.includes("entrenamiento")) { socket.emit('cambiar-modo', 'MODO ENTRENAMIENTO'); }
-                // En lobby no se acepta nada más
                 return;
             }
 
-            // ── MODO PARTIDO ───────────────────────────────────────────────────
+            // MODO PARTIDO
             if (modoActual === 'MODO PARTIDO') {
                 // Definir saque (solo si aún no se ha definido)
                 if (!saqueDefinido) {
                     if (transcript === "yo" || transcript.includes(" yo")) { socket.emit('definir-saque', 'yo'); return; }
                     if (transcript === "rival" || transcript.includes("rival")) { socket.emit('definir-saque', 'rival'); return; }
+                    // Easter egg
                     if (transcript === "rafa" || transcript.includes("rafa") || transcript.includes("nadal")) {
                         socket.emit('definir-saque', 'Nadal'); return;
                     }
@@ -547,9 +561,10 @@ function activarVoz() {
                 // Deshacer punto
                 if (transcript.includes("deshacer")) { socket.emit('deshacer-punto'); return; }
 
-                // Salir (con confirmación de doble "salir")
-                if (transcript.includes("salir") || transcript.includes("volver")) {
+                // Salir (con confirmación diciendo "salir" dos veces)
+                if (transcript.includes("salir")) {
                     if (!esperandoConfirmacionSalir) {
+                        // Primera vez: pedir confirmación
                         esperandoConfirmacionSalir = true;
                         socket.emit('solicitar-confirmacion-salir');
                         if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
@@ -557,38 +572,23 @@ function activarVoz() {
                             esperandoConfirmacionSalir = false;
                         }, 10000);
                     } else {
-                        // Segunda confirmación con "salir"
+                        // Segunda vez: confirmar y salir
                         if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
                         esperandoConfirmacionSalir = false;
                         socket.emit('resetear-a-inicio');
                     }
                     return;
                 }
-
-                // Confirmación explícita sí/no tras pedir salir
-                if (esperandoConfirmacionSalir) {
-                    if (transcript.includes("si")) {
-                        if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
-                        esperandoConfirmacionSalir = false;
-                        socket.emit('resetear-a-inicio');
-                    } else if (transcript.includes("no")) {
-                        if (timeoutConfirmacion) clearTimeout(timeoutConfirmacion);
-                        esperandoConfirmacionSalir = false;
-                    }
-                    return;
-                }
-
-                // En modo partido NO se aceptan comandos de entrenamiento
-                // (partido, entrenamiento, fondo, saque como submodo, línea → ignorados)
+                // En modo partido ya no se aceptan más comandos
                 return;
             }
 
-            // ── MODO ENTRENAMIENTO ─────────────────────────────────────────────
+            // MODO ENTRENAMIENTO
             if (modoActual === 'MODO ENTRENAMIENTO') {
-                // Reiniciar drill (prioridad alta para no ser bloqueado por submodos)
+                // Reiniciar drill
                 if (transcript.includes("reiniciar")) { socket.emit('reiniciar-drill'); return; }
 
-                // Salir/Volver (prioridad alta)
+                // Salir/Volver
                 if (transcript.includes("salir") || transcript.includes("volver")) {
                     if (currentSubModo) {
                         socket.emit('cambiar-submodo', null); // Vuelve a selección dentro de entrenamiento
@@ -598,6 +598,7 @@ function activarVoz() {
                     return;
                 }
 
+                // Submodos
                 if (transcript.includes("fondo")) {
                     if (!currentSubModo) {
                         socket.emit('cambiar-submodo', 'FONDO');
@@ -610,7 +611,6 @@ function activarVoz() {
                     }
                     return;
                 }
-                // "saque" como submodo (cuidado: no confundir con definir saque de partido)
                 if (transcript.includes("saque")) {
                     if (!currentSubModo) {
                         socket.emit('cambiar-submodo', 'SAQUE');
@@ -618,16 +618,15 @@ function activarVoz() {
                     return;
                 }
 
-                // En entrenamiento NO se acepta "partido" ni comandos de partido
+                // En modo entrenamiento ya no se aceptan más comandos
                 return;
             }
         };
-        recognition.start();
+        recognition.start(); // Inicia el reconocimiento de voz
     }
 }
 
-// --- LÓGICA DE ENTRENAMIENTO (MEDIAPIPE) ---
-
+// Lógica de entrenamiento (fondo y saque) con MediaPipe
 async function startTraining() {
     // Solo cargar MediaPipe si NO estamos en modo línea y no está ya cargado
     if (currentSubModo !== 'LINEA' && !poseLandmarker) {
@@ -644,6 +643,7 @@ async function startTraining() {
         });
     }
 
+    // Inicia la cámara
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         const constraints = {
             video: {
@@ -654,8 +654,6 @@ async function startTraining() {
         };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         videoElement.srcObject = stream;
-
-        // Usar .onloadeddata para SOBREESCRIBIR y evitar acumulación de listeners
         videoElement.onloadeddata = () => {
             if (requestID) cancelAnimationFrame(requestID);
             predictWebcam();
@@ -664,6 +662,7 @@ async function startTraining() {
     }
 }
 
+// Detiene la cámara
 function stopTraining() {
     if (webcamRunning) {
         if (requestID) cancelAnimationFrame(requestID);
@@ -682,6 +681,7 @@ let lastVideoTime = -1;
 let lastFrameSent = 0;
 let requestID = null;
 
+// Monitoriza la webcam
 async function predictWebcam() {
     // Si la cámara se ha parado o el modo no es entrenamiento, salir definitivamente
     if (!webcamRunning || (modoActual !== 'MODO ENTRENAMIENTO' && !window.debugTraining)) {
@@ -692,26 +692,25 @@ async function predictWebcam() {
 
     let startTimeMs = performance.now();
 
-    // --- NUEVO: ENVÍO DE VIDEO EN TIEMPO REAL ---
+    // Envía el video en tiempo real
     if (startTimeMs - lastFrameSent > 80) {
         sCtx.drawImage(videoElement, 0, 0, smallCanvas.width, smallCanvas.height);
         const imageData = smallCanvas.toDataURL('image/jpeg', 0.6);
         socket.emit('video-frame', imageData);
         lastFrameSent = startTimeMs;
     }
-    // --------------------------------------------
 
+    // Detecta los movimientos
     if (lastVideoTime !== videoElement.currentTime) {
         lastVideoTime = videoElement.currentTime;
 
-        // --- OPTIMIZACIÓN: Solo ejecutar MediaPipe si NO es modo LÍNEA ---
+        // Solo ejecutar MediaPipe si NO es modo LÍNEA
         if (poseLandmarker && currentSubModo !== 'LINEA') {
             const result = poseLandmarker.detectForVideo(videoElement, startTimeMs);
             if (result.landmarks && result.landmarks.length > 0) {
                 const landmarks = result.landmarks[0];
 
-                // Mapeo explícito para forzar que propiedades como 'visibility' o 'score' se incluyan
-                // ya que JSON.stringify a veces las ignora si son no-enumerables.
+                // Mapeo explícito para forzar que propiedades como 'visibility' o 'score'
                 const cleanLandmarks = landmarks.map(l => ({
                     x: l.x,
                     y: l.y,
@@ -719,13 +718,14 @@ async function predictWebcam() {
                     visibility: (l.visibility !== undefined) ? l.visibility : (l.score !== undefined ? l.score : 0.9)
                 }));
 
+                // Envía los datos al servidor
                 socket.emit('training-data', {
                     landmarks: cleanLandmarks,
                     timestamp: startTimeMs
                 });
             }
         } else if (currentSubModo === 'LINEA') {
-            // Heartbeat para mantener vivo el dibujo del dashboard
+            // No envia nada, solo mantiene viva la conexión
             socket.emit('training-data', {
                 landmarks: [],
                 timestamp: startTimeMs

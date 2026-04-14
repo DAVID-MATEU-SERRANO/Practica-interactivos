@@ -7,29 +7,30 @@ import os from 'os';
 import fs from 'fs';
 import 'dotenv/config';
 
-
+// Variables globales
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Inicializa la aplicación
 const app = express();
 const server = createServer(app);
 const io = new Server(server);
-
 app.use(express.json());
 
-// --- ALMACENAMIENTO DE ESTADÍSTICAS ---
-// Estado del modo actual en el servidor
+// Almacenamiento del estado del servidor
 let modoActual = 'LOBBY';
-let subModoActual = null;
+let subModoActual = null; // Para entrenamiento
 let matchStats = {
     points: [],
     games: [],
-    servidorInicial: null, // null, 'yo', 'rival', 'Nadal'
+    servidorInicial: null,
     startTime: Date.now()
 };
 
+// Archivo para guardar las estadísticas del partido
 const STATS_FILE = path.join(process.cwd(), 'match_stats.json');
 
+// Guarda las estadísticas en el archivo (se reinicia cada vez que se comienza un partido)
 function saveStats() {
     try {
         fs.writeFileSync(STATS_FILE, JSON.stringify(matchStats, null, 2));
@@ -53,7 +54,7 @@ app.get('/ip', (req, res) => {
     res.json({ ip: localIp });
 });
 
-// Endpoint para recuperar las estadísticas guardadas
+// Recuperamos estadísticas del json 
 app.get('/match-stats', (_, res) => {
     try {
         if (fs.existsSync(STATS_FILE)) {
@@ -72,30 +73,26 @@ app.get('/match-stats', (_, res) => {
 // Servir archivos estáticos desde la carpeta 'public' 
 app.use(express.static(path.join(__dirname, 'public')));
 
-
-
+// Conexión de Socket.IO
 io.on('connection', (socket) => {
-    console.log('Dispositivo conectado: ' + socket.id);
-
     // Evento para sincronizar el cambio de modo (Partido/Entrenamiento)
     socket.on('cambiar-modo', (modo) => {
         // Solo se puede cambiar de modo desde el LOBBY
-        // (partido → entrenamiento directo o viceversa está prohibido)
         const desdelobby = (modoActual === 'LOBBY' || modoActual === '');
         const aModoPrincipal = (modo === 'MODO PARTIDO' || modo === 'MODO ENTRENAMIENTO');
 
         if (aModoPrincipal && !desdelobby) {
-            console.warn(`⛔ Cambio de modo rechazado: ${modoActual} → ${modo} (debe pasar por LOBBY)`);
-            return; // Ignorar la petición
+            return; // Ignorar la petición ya que no se puede realizar ese cambio
         }
 
+        // Actualizamos el modo y lo enviamos a todos los dispositivos
         modoActual = modo;
         io.emit('modo-actualizado', modo);
     });
 
-    // Evento para resetear el sistema a la pantalla inicial
+    // Evento para resetear el sistema al Lobby
     socket.on('resetear-a-inicio', () => {
-        // Reiniciar estadísticas del partido
+        // Reiniciamos las estadísticas del partido
         matchStats = {
             points: [],
             games: [],
@@ -105,18 +102,18 @@ io.on('connection', (socket) => {
         saveStats();
         modoActual = 'LOBBY';
         subModoActual = null;
+        // Enviamos el cambio de modo a todos los dispositivos
         io.emit('modo-actualizado', 'LOBBY');
     });
 
-    // Evento puente para solicitar confirmación de voz al Dashboard
+    // Evento puente para solicitar confirmación de voz al salir del partido
     socket.on('solicitar-confirmacion-salir', () => {
         io.emit('solicitar-confirmacion-salir');
     });
 
-
-
     // Evento para anotar puntos en modo partido con métricas
     socket.on('anotar-punto', (payload) => {
+        // Obtenemos el ganador y las métricas
         let quien, metrics;
         if (typeof payload === 'string') {
             quien = payload;
@@ -125,10 +122,7 @@ io.on('connection', (socket) => {
             quien = payload.quien;
             metrics = payload.metrics;
         }
-
-        console.log(`\n[PUNTO] Ganador: ${quien} | Motivo: ${metrics.motivo || 'N/A'}`);
-
-        // Guardar el punto en las estadísticas
+        // Guardamos el punto en las estadísticas
         matchStats.points.push({
             winner: quien,
             timestamp: Date.now(),
@@ -136,53 +130,50 @@ io.on('connection', (socket) => {
         });
         saveStats();
 
-        // Notificar a todos los dispositivos (especialmente al Dashboard) con el payload completo
+        // Enviamos el punto registrado a todos los dispositivos
         io.emit('punto-registrado', payload);
-    });
-
-    // Evento para recibir debug de golpes en tiempo real
-    socket.on('nuevo-golpe', (data) => {
-        console.log(`[GOLPE] Tipo: ${data.trajectory} (${data.side}) | Potencia: ${data.power}`);
     });
 
     // Evento para deshacer el último punto anotado
     socket.on('deshacer-punto', () => {
-        console.log("Evento deshacer-punto recibido");
         if (matchStats.points.length > 0) {
-            matchStats.points.pop();
-            
-            // Ya no manipulamos los games aquí basándonos en timestamps. 
-            // El cliente los reconstruirá iterativamente y emitirá 'sync-games'.
-            
+            matchStats.points.pop(); // Quitamos el último punto
             saveStats();
-            console.log("Punto deshecho");
             io.emit('punto-deshecho', matchStats);
         }
     });
 
     // Evento para registrar el fin de un juego
     socket.on('registrar-fin-juego', (gameData) => {
+        // Solo guardamos cuando el dato incluye la duración (viene del móvil)
+        if (gameData.duracion === undefined) {
+            // Es la señal del portatil, hacemos broadcast para que el móvil calcule
+            socket.broadcast.emit('registrar-fin-juego', gameData);
+            return;
+        }
+        // Tiene duración: viene del móvil, guardamos
         matchStats.games.push({
             timestamp: Date.now(),
             ...gameData
         });
         saveStats();
+        // Avisamos que hemos guardado el juego correctamente para que el portatil guarde la stats
+        io.emit('juego-guardado', gameData);
     });
 
-    // Evento para sincronizar los juegos re-calculados (ej. tras deshacer punto)
+    // Evento para sincronizar los juegos re-calculados
     socket.on('sync-games', (games) => {
         matchStats.games = games;
         saveStats();
     });
 
     socket.on('cambiar-submodo', (submodo) => {
-        // Solo se puede saltar a un submodo si no hay ninguno activo,
-        // o si se está saliendo (submodo === null)
+        // Solo se puede saltar a un submodo si no hay ninguno activo
         if (submodo !== null && subModoActual !== null && submodo !== subModoActual) {
-            console.warn(`⛔ Cambio de submodo rechazado: ${subModoActual} → ${submodo} (pasa por null primero)`);
-            return;
+            return; // Evitar cambios de submodo no permitidos
         }
         if (submodo === subModoActual) return; // Evitar reenviar el mismo estado y crear bucle
+        // Actualizamos el submodo y lo enviamos a todos los dispositivos
         subModoActual = submodo;
         io.emit('submodo-actualizado', submodo);
     });
@@ -207,34 +198,27 @@ io.on('connection', (socket) => {
 
     // Evento para silenciar/activar audio
     socket.on('alternar-audio', (estado) => {
-        console.log('Audio: ' + (estado ? 'SILENCIADO' : 'ACTIVADO'));
         io.emit('audio-actualizado', estado);
     });
 
-
-
-    // --- MODO ENTRENAMIENTO ---
+    // Evento para reiniciar el drill
     socket.on('reiniciar-drill', () => {
         io.emit('reiniciar-drill');
     });
 
+    // Evento para recibir los datos del entrenamiento
     socket.on('training-data', (data) => {
-        if (data.landmarks) {
-        }
-        // Reenviamos los landmarks a todos los clientes (el Dashboard los procesará)
+        // Reenviamos los landmarks a todos los clientes
         io.emit('training-data', data);
     });
 
+    // Evento para recibir el frame de video
     socket.on('video-frame', (frame) => {
-        // Reenviar el frame de video a todos los demás (el portátil)
         io.emit('render-video', frame);
-    });
-
-    socket.on('disconnect', () => {
-        console.log('Dispositivo desconectado');
     });
 });
 
+// Puerto en el que corre el servidor, añadimos texto de depuración
 const PORT = 3000;
 server.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);

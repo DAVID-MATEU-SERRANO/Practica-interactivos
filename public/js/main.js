@@ -11,43 +11,29 @@ const lobbyView = document.getElementById('lobby-view');
 const marcadorView = document.getElementById('marcador-view');
 const entrenamientoView = document.getElementById('entrenamiento-view');
 
-// Tarjetas de Selección de Modo
-const cardPartido = document.getElementById('card-partido');
-const cardEntrenamiento = document.getElementById('card-entrenamiento');
-
 // Referencias al Marcador y Otros
-const marcadorPartido = document.getElementById('marcador-partido');
 const avisoPista = document.getElementById('aviso-pista');
-const qrSection = document.getElementById('qr-section');
-const statusContainer = document.getElementById('status-container');
-
-// Vista Entrenamiento Detalle
-const canvasEntrenamiento = document.getElementById('canvas-entrenamiento');
-const ctxEntrenamiento = canvasEntrenamiento ? canvasEntrenamiento.getContext('2d') : null;
-const txtAngulo = document.getElementById('txt-angulo');
-const feedbackBadge = document.getElementById('feedback-badge');
-
-const angleDisplay = document.getElementById('angle-display');
-const trainingTipsContainer = document.querySelector('.training-tips');
-
-// Las tarjetas del Lobby se gestionan ahora SOLO mediante comandos de voz
-
-// Referencias al Marcador
 const uiPuntos = { yo: document.getElementById('puntos-yo'), rival: document.getElementById('puntos-rival') };
 const uiSaque = { yo: document.getElementById('saque-yo'), rival: document.getElementById('saque-rival') };
-const uiNombres = { yo: document.querySelector('#fila-yo .col-nombre'), rival: document.querySelector('#fila-rival .col-nombre') };
-
-// Referencias Video Nadal
-const nadalOverlay = document.getElementById('nadal-overlay');
-const nadalVideo = document.getElementById('nadal-video');
-
 const uiSets = [
     { yo: document.getElementById('s1-yo'), rival: document.getElementById('s1-rival') },
     { yo: document.getElementById('s2-yo'), rival: document.getElementById('s2-rival') },
     { yo: document.getElementById('s3-yo'), rival: document.getElementById('s3-rival') }
 ];
 
-// --- ESTADO DEL PARTIDO ---
+// Vista Entrenamiento Detalle
+const canvasEntrenamiento = document.getElementById('canvas-entrenamiento');
+const ctxEntrenamiento = canvasEntrenamiento ? canvasEntrenamiento.getContext('2d') : null;
+const txtAngulo = document.getElementById('txt-angulo');
+const feedbackBadge = document.getElementById('feedback-badge');
+const angleDisplay = document.getElementById('angle-display');
+const trainingTipsContainer = document.querySelector('.training-tips');
+
+// Referencias Video Nadal
+const nadalOverlay = document.getElementById('nadal-overlay');
+const nadalVideo = document.getElementById('nadal-video');
+
+// Estado global del partido
 let partido = {
     sets: [0, 0],
     games: [0, 0],
@@ -63,45 +49,41 @@ let partido = {
     matchHistory: [], // Registro de todos los puntos
     ultimoIndiceDescanso: 0, // Para calcular deltas
     ultimoIndiceJuegosDescanso: 0, // Para deltas de juegos
-    inicioUltimoJuego: Date.now(), // Tracking de duración de juego
     gameHistory: [] // Registro de duraciones de juegos
 };
 
 // Referencias Stats Overlay
 const statsOverlay = document.getElementById('stats-overlay');
-const btnCloseStats = document.getElementById('close-stats');
-if (btnCloseStats) btnCloseStats.onclick = () => {
-    statsOverlay.classList.remove('visible');
-    document.body.classList.remove('stats-visible');
-};
 
+// Variable para el marcador
 const labelsPuntos = ["0", "15", "30", "40", "AD"];
-let golpeSeleccionado = 'DERECHA'; // Por defecto
+
+// Variables para el entrenamiento
 let trainingActive = false;
 let subModoTraining = null; // null, 'FONDO' o 'SAQUE'
-let alturaMinimaMuñeca = 1.0; // Para el peak detector de saque
 let isReplaying = false; // Flag para silenciar audio y eventos durante la reconstrucción
 
-// --- VARIABLES DEL DESAFÍO DE 5 GOLPES ---
+// Variables del desafío de 5 golpes (entrenamiento)
 let contadorIntentos = 0;
 let contadorExitos = 0;
 let ultimaDeteccionDrill = 0;
 let drillFinalizado = false;
 
-// --- VARIABLES DE PRECISIÓN ---
+// Variables de precisión (entrenamiento)
 let estadoPreparacion = false; // Para detectar ciclo Codo Doblado -> Estirado
 let maxAnguloEnSalto = 0;      // Para capturar el mejor ángulo durante todo el saque/golpe
 let maxSeparacionEnSalto = 0;  // Para capturar la mejor separación hombro-codo
 let serveInProgress = false;    // Para saber cuándo se está realizando un saque alto
 
-// --- VARIABLES TEACHABLE MACHINE (MODO LÍNEA) ---
+// Variables Teachable Machine (modo línea)
 let tmModel = null;
 let isTMModelLoading = false;
 let isProcessingTM = false; // Semáforo para evitar sobrecarga de predicciones
-const TM_MODEL_URL = "https://teachablemachine.withgoogle.com/models/tBz8aUiIP/"; // URL remota del usuario
+const TM_MODEL_URL = "https://teachablemachine.withgoogle.com/models/tBz8aUiIP/"; // URL  del modelo TM
 let lastFeedbackTime = 0; // Para cooldown de voz
 let lastLineState = null; // Cache del último estado del modo LÍNEA: null | 'PISANDO' | 'PERFECTO'
 
+// Función para cargar el modelo TM
 async function cargarModeloLinea() {
     if (tmModel || isTMModelLoading) return;
     if (!window.tmImage) {
@@ -110,11 +92,9 @@ async function cargarModeloLinea() {
     }
     try {
         isTMModelLoading = true;
-        console.log("🤖 Cargando modelo de Teachable Machine...");
         const modelURL = TM_MODEL_URL + "model.json";
         const metadataURL = TM_MODEL_URL + "metadata.json";
         tmModel = await window.tmImage.load(modelURL, metadataURL);
-        console.log("✅ Modelo TM cargado correctamente");
     } catch (e) {
         console.error("❌ Error al cargar modelo TM:", e);
     } finally {
@@ -122,19 +102,19 @@ async function cargarModeloLinea() {
     }
 }
 
+// Función para reiniciar el drill en el modo entrenamiento
 function reiniciarDrill() {
     contadorIntentos = 0;
     contadorExitos = 0;
     drillFinalizado = false;
     ultimaDeteccionDrill = 0;
-    alturaMinimaMuñeca = 1.0;
     estadoPreparacion = false;
     maxAnguloEnSalto = 0;
     maxSeparacionEnSalto = 0;
     serveInProgress = false;
 }
 
-// --- SINCRONIZACIÓN DE AUDIO ---
+// Sincronización de audio
 socket.on('audio-actualizado', (silenciar) => {
     partido.estaSilenciado = silenciar;
 
@@ -159,9 +139,7 @@ socket.on('audio-actualizado', (silenciar) => {
     }
 });
 
-/**
- * Inicializa el sistema, limpia el overlay y genera el código QR
- */
+// Inicializa el sistema, limpia el overlay y genera el código QR
 if (btnIniciar) {
     btnIniciar.addEventListener('click', () => {
         startOverlay.style.display = 'none';
@@ -172,6 +150,7 @@ if (btnIniciar) {
         marcadorView.style.display = 'none';
         entrenamientoView.style.display = 'none';
 
+        // Generar QR para móvil
         fetch('/ip')
             .then(response => response.json())
             .then(data => {
@@ -186,11 +165,11 @@ if (btnIniciar) {
             })
             .catch(err => console.error("Error obteniendo IP:", err));
 
-        hablar("Bienvenido al sistema de Tenis Inteligente. Puede decir Partido o Entrenamiento al móvil para comenzar.");
+        hablar("Bienvenido al sistema de Tenis Inteligente. Diga Partido o Entrenamiento para comenzar.");
         recuperarEstadisticas();
     });
 
-    // AUTO-INICIO tras un RESET (salir)
+    // Auto-inicio tras un RESET (salir)
     if (sessionStorage.getItem('skipStartOverlay') === 'true') {
         sessionStorage.removeItem('skipStartOverlay');
         // Pequeño delay para asegurar que todo cargó
@@ -198,8 +177,8 @@ if (btnIniciar) {
     }
 }
 
+// Función para resetear el estado del partido, de manera que se pueda volver a jugar
 function resetEstadoPartido() {
-    console.log("Reiniciando estado del partido para reconstrucción...");
     partido.sets = [0, 0];
     partido.games = [0, 0];
     partido.puntos = [0, 0];
@@ -212,7 +191,6 @@ function resetEstadoPartido() {
     partido.servidorInicialSet = null;   // Asegurar que vuelve a estar nulo
     partido.matchHistory = [];
     partido.gameHistory = [];
-    partido.inicioUltimoJuego = Date.now();
     partido.ultimoIndiceDescanso = 0;
     partido.ultimoIndiceJuegosDescanso = 0;
 
@@ -234,10 +212,10 @@ function resetEstadoPartido() {
     actualizarMarcadorUI();
 }
 
+// Función para reconstruir el partido a partir de las estadísticas (para cuando se deshace un punto)
 function reconstruirPartido(stats) {
     if (!stats || !stats.points) return;
     const pointsToReplay = stats.points;
-    console.log(`Iniciando reconstrucción de ${pointsToReplay.length} puntos...`);
 
     // Preservar quién empezó sacando (del objeto stats o del estado actual)
     const servidorOriginal = stats.servidorInicial || (partido.servidorInicialSet === 0 ? 'yo' : (partido.servidorInicialSet === 1 ? 'rival' : null));
@@ -263,7 +241,7 @@ function reconstruirPartido(stats) {
             quien: p.winner || p.ganador,
             metrics: p.metrics || null
         };
-        procesarPunto(payload, true); // true for silent (replay)
+        procesarPunto(payload, true);
     });
     isReplaying = false;
 
@@ -272,23 +250,28 @@ function reconstruirPartido(stats) {
 
     actualizarMarcadorUI();
 
-    // Al finalizar la re-construcción, verificamos el DOM para reflejar el estado correcto (ej. si quedó en descanso de pista)
+    // Al finalizar la re-construcción, verificamos el DOM para reflejar el estado correcto
     setTimeout(() => verificarCambioPista(), 0);
+
+    // Para la duración de los juegos
+    if (stats.games) {
+        partido.gameHistory = [...stats.games];
+    }
 }
 
+// Función para recuperar las estadísticas del partido
 async function recuperarEstadisticas() {
     try {
-        console.log("Intentando recuperar estadísticas del servidor...");
+        // Hacemos una petición al servidor para obtener las estadísticas
         const response = await fetch('/match-stats');
         const data = await response.json();
 
+        // Actualizamos las estadísticas del partido
         if (data && data.points) {
             partido.matchHistory = data.points;
-            console.log(`Recuperados ${data.points.length} puntos.`);
         }
         if (data && data.games) {
             partido.gameHistory = data.games;
-            console.log(`Recuperados ${data.games.length} juegos.`);
         }
         actualizarMarcadorUI();
     } catch (err) {
@@ -296,10 +279,10 @@ async function recuperarEstadisticas() {
     }
 }
 
-// --- LÓGICA DE SAQUE RECIBIDA DEL MÓVIL ---
+// Lógica de saque recibida del móvil
 socket.on('saque-definido', (quien) => {
     if (quien === 'Nadal') {
-
+        // Easter egg
         hablar("Homenaje a Rafa Nadal activado. El rey de la tierra batida saca para usted.");
         document.getElementById("nombre-yo").innerHTML = 'NADAL  <span class="pelota-saque" id="saque-yo" style="visibility: hidden;">🎾</span>';
         uiSaque.yo = document.getElementById('saque-yo'); // Actualizar referencia del elemento recreado
@@ -312,18 +295,19 @@ socket.on('saque-definido', (quien) => {
         }, 5000);
         return;
     }
+    // Actualizamos el saque normal
     partido.quienSaca = (quien === 'yo') ? 0 : 1;
     partido.servidorInicialSet = partido.quienSaca;
     actualizarMarcadorUI();
     hablar("Saque inicial definido. Empieza sacando " + (quien === 'yo' ? "usted" : "el rival"));
 });
 
+// Función para activar el homenaje a Rafa Nadal
 function activarHomenajeNadal() {
-    // Reproducir video
+    // Reproducir vídeo
     if (nadalOverlay && nadalVideo) {
         nadalOverlay.style.display = 'flex';
         nadalVideo.play();
-
         // Al terminar el vídeo, ocultar overlay
         nadalVideo.onended = () => {
             nadalOverlay.style.display = 'none';
@@ -331,13 +315,14 @@ function activarHomenajeNadal() {
     }
 }
 
-
+// Función para cambiar el servidor del juego (van alternando)
 function cambiarServidorJuego() {
     partido.quienSaca = 1 - partido.quienSaca;
     const quien = (partido.quienSaca === 0) ? 'yo' : 'rival';
     socket.emit('notificar-saque', quien);
 }
 
+// Función para verificar el servidor del tie break (aquí la lógica es distinta)
 function verificarServidorTieBreak() {
     const totalPuntos = partido.tieBreakPoints[0] + partido.tieBreakPoints[1];
     const baseServer = partido.servidorInicialSet;
@@ -347,25 +332,28 @@ function verificarServidorTieBreak() {
     socket.emit('notificar-saque', quien);
 }
 
-// --- LÓGICA DE PUNTUACIÓN ---
+// LÓGICA DE PUNTUACIÓN
 
 socket.on('punto-registrado', (payload) => {
     procesarPunto(payload);
 });
 
 socket.on('punto-deshecho', (stats) => {
-    console.log("Recuperando estado previo tras deshacer punto...");
     reconstruirPartido(stats);
     hablar("Punto deshecho.");
 });
 
+// Procesamos el punto con la información que nos ha llegado
 function procesarPunto(payload, silent = false) {
+    // Si no estamos en modo silencioso, ocultamos el overlay de estadísticas
     if (!silent) {
         statsOverlay.classList.remove('visible');
         document.body.classList.remove('stats-visible');
     }
+    // Si el partido ha terminado o no hay saque, no hacemos nada
     if (partido.isMatchFinished || partido.quienSaca === null) return;
 
+    // Obtenemos el ganador y las métricas
     let quien, metrics;
     if (typeof payload === 'string') {
         quien = payload;
@@ -375,9 +363,11 @@ function procesarPunto(payload, silent = false) {
         metrics = payload.metrics;
     }
 
+    // Obtenemos el índice del ganador y del perdedor
     const winnerIdx = (quien === 'yo') ? 0 : 1;
     const loserIdx = (quien === 'yo') ? 1 : 0;
 
+    // Si es tie break, anotamos el punto de tie break (ya que va distinto)
     if (partido.isTieBreak) {
         anotarPuntoTieBreak(winnerIdx, loserIdx);
         verificarServidorTieBreak();
@@ -385,40 +375,46 @@ function procesarPunto(payload, silent = false) {
         anotarPuntoEstandar(winnerIdx, loserIdx);
     }
 
-    // Guardar en el historial
+    // Guardamos el punto en el historial
     partido.matchHistory.push({
         ganador: quien,
-        marcadorPost: `${partido.games[0]}-${partido.games[1]} (${partido.puntos[0]}-${partido.puntos[1]})`,
         metrics: metrics,
         setIndex: partido.currentSetIndex
     });
 
     actualizarMarcadorUI();
 
-    // Desacoplar para asegurar que la UI reaccione y las promesas/estados sincrónicos estén limpios
+    // Desacoplar para asegurar que la UI reaccione y los estados sincrónicos estén limpios
     if (!silent) {
         setTimeout(() => verificarCambioPista(), 0);
     } else {
         // En reconstrucción (silent) replicamos la lógica sin mutar la UI, solo para avanzar el índice base de stats
         let esCambio = false;
         if (partido.isTieBreak) {
+            // En tie-break: cambia cada 6 puntos
             const totalPuntosTie = partido.tieBreakPoints[0] + partido.tieBreakPoints[1];
             if (totalPuntosTie > 0 && totalPuntosTie % 6 === 0) esCambio = true;
         } else if (partido.puntos[0] === 0 && partido.puntos[1] === 0) {
+            // En sets normales: cambia cada 2 juegos
             if (partido.games[0] === 0 && partido.games[1] === 0) {
+                // Inicio de un nuevo set
                 if (partido.currentSetIndex > 0) {
                     const prevSet = partido.setScores[partido.currentSetIndex - 1];
                     if ((prevSet[0] + prevSet[1]) % 2 !== 0) esCambio = true;
                 }
             } else {
+                // Durante el transcurso del set
                 if ((partido.games[0] + partido.games[1]) % 2 !== 0) esCambio = true;
             }
         }
 
+        // Identificamos si estamos en un momento de pausa (Fin de juego o durante Tie-break)
         const esDescanso = (partido.isTieBreak || (partido.puntos[0] === 0 && partido.puntos[1] === 0));
         if (esCambio && esDescanso) {
+            // Verificamos si acabamos de empezar un set
             const setRecienTerminado = (partido.games[0] === 0 && partido.games[1] === 0 && partido.matchHistory.length > 0 && !partido.isTieBreak);
             if (!setRecienTerminado) {
+                // Registramos el punto exacto en el historial donde ocurre el descanso
                 partido.ultimoIndiceDescanso = partido.matchHistory.length;
                 partido.ultimoIndiceJuegosDescanso = partido.gameHistory.length;
             }
@@ -426,7 +422,9 @@ function procesarPunto(payload, silent = false) {
     }
 };
 
+// Función para anotar un punto estándar (no tie break)
 function anotarPuntoEstandar(w, l) {
+    // Sigue la lógica del tenis -> 15, 30, 40 (trata las ventajas también), Juego
     if (partido.puntos[w] < 3) {
         partido.puntos[w]++;
         cantarPuntuacion();
@@ -445,6 +443,7 @@ function anotarPuntoEstandar(w, l) {
     }
 }
 
+// Función para anotar un punto en tie break (hasta 7 puntos, con diferencia de 2)
 function anotarPuntoTieBreak(w, l) {
     partido.tieBreakPoints[w]++;
     cantarPuntuacion();
@@ -456,6 +455,7 @@ function anotarPuntoTieBreak(w, l) {
     }
 }
 
+// Función para cantar la puntuación
 function cantarPuntuacion() {
     const s = partido.quienSaca;
     const r = 1 - s;
@@ -467,6 +467,7 @@ function cantarPuntuacion() {
         const pR = labelsPuntos[partido.puntos[r]] === "0" ? "Nada" : labelsPuntos[partido.puntos[r]];
 
         if (pS === pR && pS !== "AD") {
+            // Si están iguales
             hablar(pS === "Nada" ? "Nada iguales" : pS + " iguales");
         } else {
             hablar(`${pS} ${pR}`);
@@ -474,39 +475,31 @@ function cantarPuntuacion() {
     }
 }
 
+// Función que trata cuando se gana un juego
 function ganarJuego(w) {
-    // Calcular duración del juego si lo estuviéramos trackeando aquí centralizadamente
-    // Pero el móvil lo enviará si le avisamos.
-
+    // Actualizamos la puntuación
     partido.games[w]++;
     partido.puntos = [0, 0];
     partido.setScores[partido.currentSetIndex] = [...partido.games];
 
-    // Calcular duración del juego
-    const duracionJuego = Math.floor((Date.now() - partido.inicioUltimoJuego) / 1000); // en segundos
-    partido.inicioUltimoJuego = Date.now(); // Reset para el siguiente juego
-
-    // Notificar al móvil que el juego ha terminado para que guarde estadísticas
+    // Mandamos los datos al servidor
     const payload = {
         ganador: w === 0 ? 'yo' : 'rival',
         marcador: `${partido.games[0]}-${partido.games[1]}`,
-        duracion: duracionJuego,
+        // No incluimos la duración para que la calcule el móvil
         setIndex: partido.currentSetIndex
     };
-
     if (!isReplaying) {
+        // Enviamos el payload al servidor
         socket.emit('registrar-fin-juego', payload);
     }
 
-    // Guardar localmente para cálculos de media
-    partido.gameHistory.push(payload);
-
-    if (!partido.isTieBreak) cambiarServidorJuego();
+    if (!partido.isTieBreak) cambiarServidorJuego(); // Actualizamos quien saca
 
     const s = partido.quienSaca;
     const r = 1 - s;
 
-    // Anuncio conciso: "Juego usted. 4 2." o "Juego rival. 2 4."
+    // Anuncio de que ha acabado el juego
     let msg = `Juego ${w === 0 ? "usted" : "rival"}. `;
     if (partido.games[s] === partido.games[r]) {
         msg += `${partido.games[s]} iguales.`;
@@ -518,6 +511,12 @@ function ganarJuego(w) {
     checkSetStatus(w);
 }
 
+// Cuando se recibe la confirmación de que se ha guardado el juego (con la duración del movil) se guarda todo
+socket.on('juego-guardado', (gameData) => {
+    partido.gameHistory.push(gameData);
+});
+
+// Comprueba si se ha ganado el set
 function checkSetStatus(w) {
     const l = 1 - w;
     const gW = partido.games[w];
@@ -534,10 +533,12 @@ function checkSetStatus(w) {
     }
 }
 
+// Función que trata cuando se gana un set
 function ganarSet(w) {
+    // Actualizamos el número de sets ganados
     partido.sets[w]++;
 
-    // Anuncio conciso: "Set usted. 6 4."
+    // Anuncio de que se ha ganado el set
     let msg = `Set ${w === 0 ? "usted" : "rival"}. ${partido.games[0]} ${partido.games[1]}. `;
     if (partido.sets[0] !== 0 || partido.sets[1] !== 0) {
         msg += `${partido.sets[0]} sets a ${partido.sets[1]}.`;
@@ -545,6 +546,7 @@ function ganarSet(w) {
 
     hablar(msg);
 
+    // Comprueba si se ha ganado el partido
     if (partido.sets[w] === 2) {
         partido.isMatchFinished = true;
         mostrarEstadisticas("Fin del Partido");
@@ -560,7 +562,9 @@ function ganarSet(w) {
     }
 }
 
+// Actualiza la UI del marcador
 function actualizarMarcadorUI() {
+    // Actualiza los puntos
     if (partido.isTieBreak) {
         uiPuntos.yo.innerText = partido.tieBreakPoints[0];
         uiPuntos.rival.innerText = partido.tieBreakPoints[1];
@@ -568,20 +572,21 @@ function actualizarMarcadorUI() {
         uiPuntos.yo.innerText = labelsPuntos[partido.puntos[0]];
         uiPuntos.rival.innerText = labelsPuntos[partido.puntos[1]];
     }
-
+    // Actualiza los sets
     partido.setScores.forEach((score, idx) => {
         if (uiSets[idx]) {
             uiSets[idx].yo.innerText = score[0];
             uiSets[idx].rival.innerText = score[1];
         }
     });
-
+    // Actualiza quien saca
     if (partido.quienSaca !== null) {
         uiSaque.yo.style.visibility = (partido.quienSaca === 0) ? 'visible' : 'hidden';
         uiSaque.rival.style.visibility = (partido.quienSaca === 1) ? 'visible' : 'hidden';
     }
 }
 
+// Verifica si toca cambiar de pista
 function verificarCambioPista() {
     let esCambio = false;
 
@@ -797,13 +802,6 @@ function mostrarEstadisticas(titulo) {
         return Math.abs(res) < 10 && res !== 0 ? res.toFixed(1) : res.toFixed(0);
     };
 
-    const getDeltaAbs = (curr, baseline) => {
-        const c = parseFloat(curr) || 0;
-        const b = parseFloat(baseline) || 0;
-        // Quitamos decimales si ambos son enteros, de lo contrario dejamos 1 decimal
-        return (c - b).toFixed(1).replace(/\.0$/, '');
-    };
-
     const formatDelta = (delta, inverse = false) => {
         const numDelta = parseFloat(delta);
         if (isNaN(numDelta) || numDelta === 0) return ""; // No mostrar si es 0 exacto o inválido
@@ -977,7 +975,7 @@ socket.on('modo-actualizado', (modo) => {
     }
 });
 socket.on('solicitar-confirmacion-salir', () => {
-    hablar("¿Seguro que desea salir del partido? Diga salir para confirmar o no para continuar.");
+    hablar("¿Seguro que desea salir del partido? Diga salir para confirmar");
 });
 
 
@@ -1381,19 +1379,12 @@ function calcularAngulo(A, B, C) {
     return angle;
 }
 
-// Eliminado duplicado de lastFeedbackTime
-// Eliminada evaluarTecnicaFrontal para simplificar según petición de usuario
-
-
-
-
 function dibujarPose(ctx, landmarks) {
     const w = canvasEntrenamiento.width;
     const h = canvasEntrenamiento.height;
 
     // Obtener colores computados (Canvas no entiende var(--...))
     const accentCol = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#3498db';
-    const goldCol = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#fbbf24';
 
     // Conexiones de ambos brazos y torso
     const conexiones = [[12, 14], [14, 16], [11, 13], [13, 15], [12, 24], [11, 23]];
