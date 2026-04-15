@@ -1,5 +1,10 @@
 # Guía de ejecución del proyecto de tenis inteligente
 
+## Autores
+David Mateu Serrano (100522337)
+Manuel Manchado Barquero (100522228)
+Fran Jurado Basté (100522213)
+
 ## Requisitos Previos
 
 Antes de empezar, asegúrate de tener instalado:
